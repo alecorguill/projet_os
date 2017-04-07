@@ -2,15 +2,8 @@
 #include <stdio.h>
 #include <sys/queue.h>
 
-struct Element{
-  int val;
-  LIST_ENTRY(Element) pointers;
-};
-  
-struct List{
-  LIST_HEAD(list, Element) head;
-};
 
+ 
 int main(){
   struct List l;
   LIST_INIT(&l.head);

@@ -1,5 +1,6 @@
 CFLAGS = -Wall -Wextra -Werror -lpthread
-BIN = contexte
+BIN = contexte\
+	list
 all: $(BIN)
 clean:
 	$(RM) $(BIN) *~
