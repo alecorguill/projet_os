@@ -15,8 +15,12 @@ int main(){
   struct List l;
   LIST_INIT(&l.head);
 
-  struct Element * item = malloc(sizeof(struct Element));
-  LIST_INSERT_HEAD(&l.head, item, pointers);
+  struct Element * item1 = malloc(sizeof(struct Element));
+  struct Element * item2 = malloc(sizeof(struct Element));
+  struct Element * item3 = malloc(sizeof(struct Element));
+  LIST_INSERT_HEAD(&l.head, item1, pointers);
+  LIST_INSERT_HEAD(&l.head, item2, pointers);
+  LIST_INSERT_HEAD(&l.head, item3, pointers);
   fprintf(stderr, "is_empty: %d\n", LIST_EMPTY(&l.head));
   return 0;
 }

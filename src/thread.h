@@ -11,13 +11,12 @@
  */
 typedef void * thread_t;
 
-struct thread{
+struct Thread{
   ucontext_t uc;
-  unsigned int id;
 };
 
 struct Element{
-  thread_t thread;
+  struct Thread thread;
   LIST_ENTRY(Element) pointers;
 };
 
@@ -26,6 +25,7 @@ struct List{
 };
 
 struct List thread_pool;
+struct Thread thread_current;
 
 /* recuperer l'identifiant du thread courant.
  */
