@@ -3,12 +3,29 @@
 
 #ifndef USE_PTHREAD
 
+
 /* identifiant de thread
  * NB: pourra être un entier au lieu d'un pointeur si ca vous arrange,
  *     mais attention aux inconvénient des tableaux de threads
  *     (consommation mémoire, cout d'allocation, ...).
  */
 typedef void * thread_t;
+
+struct thread{
+  ucontext_t uc;
+  unsigned int id;
+};
+
+struct Element{
+  thread_t thread;
+  LIST_ENTRY(Element) pointers;
+};
+
+struct List{
+  LIST_HEAD(list, Element) head;
+};
+
+struct List thread_pool;
 
 /* recuperer l'identifiant du thread courant.
  */
