@@ -15,3 +15,6 @@ séance 04/04:
 
 séance 07/04:
 
+join : - flag pour fini ou non, yield
+       - priority queue ? (les autres threads les attendent)
+       
