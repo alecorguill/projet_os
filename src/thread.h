@@ -4,6 +4,11 @@
 #ifndef USE_PTHREAD
 
 #include <ucontext.h>
+#include <sys/queue.h>
+
+struct Thread;
+struct Element;
+struct List;
 
 /* identifiant de thread
  * NB: pourra être un entier au lieu d'un pointeur si ca vous arrange,
@@ -12,20 +17,21 @@
  */
 typedef void * thread_t;
 
-struct Thread{
+typedef struct Thread{
+  thread_t id;
   ucontext_t uc;
   struct Thread *thread_waiting;
   void *retval;
-};
+} Thread;
 
-struct Element{
+typedef struct Element{
   struct Thread thread;
   CIRCLEQ_ENTRY(Element) pointers;
-};
+} Element;
 
-struct List{
+typedef struct List{
   CIRCLEQ_HEAD(list, Element) head;
-};
+} List;
 
 struct List thread_pool;
 struct List thread_done;
