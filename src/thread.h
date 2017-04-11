@@ -3,6 +3,7 @@
 
 #ifndef USE_PTHREAD
 
+#include <ucontext.h>
 
 /* identifiant de thread
  * NB: pourra être un entier au lieu d'un pointeur si ca vous arrange,
@@ -13,19 +14,22 @@ typedef void * thread_t;
 
 struct Thread{
   ucontext_t uc;
+  struct Thread *thread_waiting;
+  void *retval;
 };
 
 struct Element{
   struct Thread thread;
-  LIST_ENTRY(Element) pointers;
+  CIRCLEQ_ENTRY(Element) pointers;
 };
 
 struct List{
-  LIST_HEAD(list, Element) head;
+  CIRCLEQ_HEAD(list, Element) head;
 };
 
 struct List thread_pool;
-struct Thread thread_current;
+struct List thread_done;
+struct Element *thread_current;
 
 /* recuperer l'identifiant du thread courant.
  */
