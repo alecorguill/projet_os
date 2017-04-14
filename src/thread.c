@@ -31,8 +31,21 @@ void pre_func(void){
 
 
 
-void exec_and_save(void *(*func)(void*)){
+void exec_and_save(void *(*func)(void*), void *funcarg){
+
+  // To save func retval in thread structure
+  thread_exit(func(funcarg));
+
+  // Set the next context
+  struct Element *next = CIRCLEQ_NEXT(thread_current, pointers);
+  if(CIRCLEQ_FIRST(&(thread_pool.head)) == CIRCLEQ_LAST(&(thread_pool.head))) // one element
+    return;
   
+  setcontext(&(next->thread.uc));
+
+  // Remove current thread from the list
+  CIRCLEQ_REMOVE(&(thread_pool.head), thread_current, pointers);
+  thread_current = next;
 }
 
 thread_t thread_self(void){
@@ -42,7 +55,7 @@ thread_t thread_self(void){
 int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg){
 	// Create context
 	ucontext_t uc;
-	makecontext(&uc, (void (*)(void)) func, 1, funcarg);
+	makecontext(&uc, (void (*)(void)) exec_and_save, 2, func, funcarg);
 	///if(uc == NULL) return -1;
 	
 	// Create thread corresponding to context
@@ -72,9 +85,9 @@ int thread_yield(void){
 	return 0;
 }
 
-//void thread_exit(void *retval
 
-
-
+void thread_exit(void *retval) {
+  thread_current->thread.retval = retval;
+}
 
 
