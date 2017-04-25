@@ -16,11 +16,13 @@ struct List;
  *     (consommation mémoire, cout d'allocation, ...).
  */
 typedef void * thread_t;
+struct Element;
 
 typedef struct Thread{
   thread_t id;
   ucontext_t uc;
-  struct Thread *thread_waiting;
+  struct Element *thread_waiting;
+  int is_waiting;
   void *retval;
 } Thread;
 

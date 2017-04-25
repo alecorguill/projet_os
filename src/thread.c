@@ -29,8 +29,6 @@ void pre_func(void){
 }
 
 
-
-
 void exec_and_save(void *(*func)(void*), void *funcarg){
 
   // To save func retval in thread structure
@@ -77,14 +75,54 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg){
 }
     
 int thread_yield(void){
+  /*	
 	if(CIRCLEQ_FIRST(&(thread_pool.head)) != CIRCLEQ_LAST(&(thread_pool.head))){ // More than one element
 		Element *thread_next = CIRCLEQ_NEXT(thread_current, pointers);
 		thread_current = thread_next;
 		return swapcontext(&(thread_current->thread.uc), &(thread_next->thread.uc));
 	}
 	return 0;
+  */
+
+  struct Element *e;
+  
+  // If thread is done
+  CIRCLEQ_FOREACH(e, thread_pool.head, pointers){
+    if(!(e->thread.is_waiting)){
+      thread_current = e;
+      return swapcontext(&(thread_current->thread.uc), &(e->thread.uc));
+    }
+  }
+  
+  return 1; // Deadlock
 }
 
+
+int thread_join(thread_t thread, void **retval){
+  struct Element *e;
+  
+  // If thread is done
+  CIRCLEQ_FOREACH(e, thread_done.head, pointers){
+    if(e->thread.id == thread)
+      return 0;
+  }
+  
+  CIRCLEQ_FOREACH(e, thread_pool.head, pointers){
+    if(e->thread.id == thread){
+      
+      if(e->thread.thread_waiting == thread_current->thread.id)
+	return 2;//thread joined twice
+
+      if(e->thread.thread_waiting != NULL)
+	return 1;//thread already joined by another thread
+      
+      e->thread.thread_waiting = thread_current;
+      e->thread.is_waiting = 1;
+      thread_current = e;
+      return swapcontext(&(thread_current->thread.uc), &(e->thread.uc));
+    }
+  }
+}
 
 void thread_exit(void *retval) {
   thread_current->thread.retval = retval;
