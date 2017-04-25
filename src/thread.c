@@ -15,8 +15,10 @@ void pre_func(void){
 	
 	// init thread_current
 	thread_current->thread.id = MAIN_ID;
-	//thread_current->thread.uc = ???;
-	thread_current->thread.thread_waiting = NULL;
+	///thread_current->thread.uc = ???;
+	thread_current->thread.thread_waiting_for_me = NULL;
+	/// thread_current->thread.is_waited = ???;
+	thread_current->thread.is_waiting = 0;
 	thread_current->thread.retval = NULL;
 	
 	// point to head (beacon)
@@ -26,6 +28,9 @@ void pre_func(void){
 	// set thread_current to first
 	thread_pool.head.cqh_first = thread_current;
 	thread_pool.head.cqh_last = thread_current;
+	
+	thread_done.head.cqh_first = (void *) &(thread_done.head);
+	thread_done.head.cqh_last = (void *) &(thread_done.head);
 }
 
 
@@ -39,11 +44,11 @@ void exec_and_save(void *(*func)(void*), void *funcarg){
   if(CIRCLEQ_FIRST(&(thread_pool.head)) == CIRCLEQ_LAST(&(thread_pool.head))) // one element
     return;
   
-  setcontext(&(next->thread.uc));
-
   // Remove current thread from the list
   CIRCLEQ_REMOVE(&(thread_pool.head), thread_current, pointers);
   thread_current = next;
+  
+  setcontext(&(next->thread.uc));
 }
 
 thread_t thread_self(void){
@@ -53,6 +58,11 @@ thread_t thread_self(void){
 int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg){
 	// Create context
 	ucontext_t uc;
+	getcontext(&uc);
+	uc.uc_stack.ss_size = 64*1024;
+    uc.uc_stack.ss_sp = malloc(uc.uc_stack.ss_size);
+    uc.uc_link = &(thread_current->thread.uc); // back to current when done
+	
 	makecontext(&uc, (void (*)(void)) exec_and_save, 2, func, funcarg);
 	///if(uc == NULL) return -1;
 	
@@ -60,6 +70,9 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg){
 	Thread t;
 	t.id = *newthread;
 	t.uc = uc;
+	t.thread_waiting_for_me = NULL;
+	t.is_waiting = 0;
+	t.retval = NULL;
 
 	// create element to store thread
 	Element* pE = malloc(sizeof(Element));
@@ -75,59 +88,91 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg){
 }
     
 int thread_yield(void){
-  /*	
-	if(CIRCLEQ_FIRST(&(thread_pool.head)) != CIRCLEQ_LAST(&(thread_pool.head))){ // More than one element
-		Element *thread_next = CIRCLEQ_NEXT(thread_current, pointers);
-		thread_current = thread_next;
-		return swapcontext(&(thread_current->thread.uc), &(thread_next->thread.uc));
-	}
-	return 0;
-  */
-
-  struct Element *e;
+  Element * pE;
+  Element * tmp;
   
-  // If thread is done
-  CIRCLEQ_FOREACH(e, &(thread_pool.head), pointers){
-    if(!(e->thread.is_waiting)){
-      thread_current = e;
-      return swapcontext(&(thread_current->thread.uc), &(e->thread.uc));
-    }
+  CIRCLEQ_FOREACH(pE, &(thread_pool.head), pointers){
+    if(!(pE->thread.is_waiting))
+	  break;
   }
+  if(pE->thread.is_waiting)
+    return 1; // Deadlock: all threads are waiting for one another
   
-  return 1; // Deadlock
+  CIRCLEQ_REMOVE(&(thread_pool.head), thread_current, pointers);
+  CIRCLEQ_INSERT_TAIL(&(thread_pool.head), thread_current, pointers);
+  
+  tmp = thread_current;
+  thread_current = pE;
+  
+  return swapcontext(&(tmp->thread.uc), &(pE->thread.uc));
 }
 
 
 int thread_join(thread_t thread, void **retval){
-  struct Element *e;
+  Element * pE;
+  Element * tmp;
   
-  // If thread is done
-  CIRCLEQ_FOREACH(e, &(thread_done.head), pointers){
-    if(e->thread.id == thread)
+  // If thread is already in thread_done, we can transfer the return value  
+  CIRCLEQ_FOREACH(pE, &(thread_done.head), pointers){
+	printf("pE = %p\n", pE);
+	  
+    if(pE->thread.id == thread){
+	  *retval = pE->thread.retval;		
       return 0;
+	}
   }
   
-  CIRCLEQ_FOREACH(e, &(thread_pool.head), pointers){
-    if(e->thread.id == thread){
-      
-      if(e->thread.thread_waiting == thread_current->thread.id)
-		return 2;//thread joined twice
+  CIRCLEQ_FOREACH(pE, &(thread_pool.head), pointers){
+    if(pE->thread.id == thread)
+		break;
+  }
+  if(pE->thread.id != thread)
+	return 3;
 
-      if(e->thread.thread_waiting != NULL)
-		return 1;//thread already joined by another thread
-      
-      e->thread.thread_waiting = thread_current;
-      e->thread.is_waiting = 1;
-      thread_current = e;
-      return swapcontext(&(thread_current->thread.uc), &(e->thread.uc));
-    }
-  }
   
-  return -1; // Should not get to this point (thread is in thread_pool)
+  if(pE->thread.thread_waiting_for_me != NULL){ // thread is already being awaited, so current cannot wait as well
+	///*retval = NULL;
+	if(pE->thread.thread_waiting_for_me == thread_current){
+	  return 2; // Deadlock situation: current is waiting thread, which is waiting current
+    }
+
+    return 1; 
+  }
+
+
+  pE->thread.thread_waiting_for_me = malloc(sizeof(Element));
+  pE->thread.thread_waiting_for_me = thread_current; // current is waiting for me
+  thread_current->thread.is_waiting = 1;
+
+  tmp = thread_current;
+  thread_current = pE;
+  
+  int rt = swapcontext(&(tmp->thread.uc), &(pE->thread.uc));
+  
+  *retval = pE->thread.retval;
+  
+  return rt;
 }
+
+
+
+
+
+
 
 void thread_exit(void *retval) {
   thread_current->thread.retval = retval;
+  
+  CIRCLEQ_REMOVE(&(thread_pool.head), thread_current, pointers);
+  CIRCLEQ_INSERT_HEAD(&(thread_done.head), thread_current, pointers);
+  
+  Element * pE = thread_current->thread.thread_waiting_for_me;
+  
+  if(pE != NULL){
+	  pE->thread.is_waiting = 0;
+  }
+  
+  thread_yield();
 }
 
 

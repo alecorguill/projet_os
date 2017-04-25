@@ -21,7 +21,8 @@ struct Element;
 typedef struct Thread{
   thread_t id;
   ucontext_t uc;
-  struct Element *thread_waiting;
+  struct Element *thread_waiting_for_me;
+  ///int is_waited;
   int is_waiting;
   void *retval;
 } Thread;
@@ -37,7 +38,7 @@ typedef struct List{
 
 static struct List thread_pool;
 static struct List thread_done;
-static struct Element *thread_current = NULL;
+static struct Element * thread_current = NULL;
 
 /* recuperer l'identifiant du thread courant.
  */

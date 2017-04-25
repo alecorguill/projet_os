@@ -1,4 +1,4 @@
-CFLAGS = -Wall -Wextra -lpthread -Isrc
+CFLAGS = -Wall -Wextra -lpthread -Isrc -g
 
 BIN = test/01-main.c \
 	test/12-join-main.c \
