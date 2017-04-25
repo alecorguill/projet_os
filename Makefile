@@ -53,7 +53,7 @@ thread:
 	gcc $(CFLAGS) -c src/thread.c
 	mv thread.o build/
 clean:
-	rm -rf build/* src/*~ src/#* test/*~ test/#*
+	rm -rf build/* src/*~ src/#* test/*~ test/#* ./01 ./02 ./11 ./12 ./21 ./22 ./23 ./31 ./32 ./51 ./61
 
 .PHONY: all clean 
 
