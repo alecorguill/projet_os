@@ -15,13 +15,13 @@ void pre_func(void){
 	// init thread_current
 	thread_current->thread.id = MAIN_ID;
 	///thread_current->thread.uc = ???;
-	ucontext_t uc;
-	getcontext(&uc);
-	uc.uc_stack.ss_size = 64*1024;
-	uc.uc_stack.ss_sp = malloc(uc.uc_stack.ss_size);
+	//ucontext_t uc;
+	//getcontext(&uc);
+	//uc.uc_stack.ss_size = 64*1024;
+	//uc.uc_stack.ss_sp = malloc(uc.uc_stack.ss_size);
 	//uc.uc_link = &(thread_current->thread.uc); // back to current when done
-	uc.uc_link = NULL;
-	thread_current->thread.uc = uc;
+	//uc.uc_link = NULL;
+	//thread_current->thread.uc = uc;
 
 	thread_current->thread.thread_waiting_for_me = NULL;
 	/// thread_current->thread.is_waited = ???;
@@ -47,26 +47,6 @@ void exec_and_save(void *(*func)(void*), void *funcarg){
 
   // To save func retval in thread structure
   thread_exit(func(funcarg));
-
-  // Set the next context
-  struct Element *next = CIRCLEQ_NEXT(thread_current, pointers);
-  if(CIRCLEQ_FIRST(&(thread_pool.head)) == CIRCLEQ_LAST(&(thread_pool.head))) // one element
-    return;
-  
-  // Remove current thread from the list
-  CIRCLEQ_REMOVE(&(thread_pool.head), thread_current, pointers);
-  CIRCLEQ_INSERT_HEAD(&(thread_done.head), thread_current, pointers);
-
-  // Other thread not waiting anymore
-  Element * pE = thread_current->thread.thread_waiting_for_me;
-  if(pE != NULL){
-	  pE->thread.is_waiting = 0;
-  }
-
-  struct Element *old = thread_current;
-  thread_current = next;
-  
-  swapcontext(&(old->thread.uc), &(next->thread.uc));
 }
 
 thread_t thread_self(void){
@@ -144,12 +124,15 @@ int thread_join(thread_t thread, void **retval){
   
   // If thread is already in thread_done, we can transfer the return value  
   CIRCLEQ_FOREACH(pE, &(thread_done.head), pointers){
-	printf("pE = %p\n", pE);
-	  
+    printf("pE = %p\n", pE);
+    
     if(pE->thread.id == thread){
-	  *retval = pE->thread.retval;		
+
+      if(retval != NULL)
+	*retval = pE->thread.retval;
+		
       return 0;
-	}
+    }
   }
   
   CIRCLEQ_FOREACH(pE, &(thread_pool.head), pointers){
@@ -185,14 +168,28 @@ int thread_join(thread_t thread, void **retval){
 }
 
 
-
-
-
-
-
 void thread_exit(void *retval) {
   thread_current->thread.retval = retval;
- 
+  printf("exit\n");
+  // Set the next context
+  struct Element *next = CIRCLEQ_NEXT(thread_current, pointers);
+  if(CIRCLEQ_FIRST(&(thread_pool.head)) == CIRCLEQ_LAST(&(thread_pool.head))) // one element
+    return;
+  
+  // Remove current thread from the list
+  CIRCLEQ_REMOVE(&(thread_pool.head), thread_current, pointers);
+  CIRCLEQ_INSERT_HEAD(&(thread_done.head), thread_current, pointers);
+
+  // Other thread not waiting anymore
+  Element * pE = thread_current->thread.thread_waiting_for_me;
+  if(pE != NULL){
+	  pE->thread.is_waiting = 0;
+  }
+
+  struct Element *old = thread_current;
+  thread_current = next;
+  
+  swapcontext(&(old->thread.uc), &(next->thread.uc));
 }
 
 

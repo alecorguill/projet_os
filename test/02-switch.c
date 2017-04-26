@@ -25,7 +25,7 @@ static void * thfunc(void *id)
   }
 
   printf("%s terminé\n", (char*) id);
-  thread_exit(NULL);
+  return NULL;
 }
 
 int main()
