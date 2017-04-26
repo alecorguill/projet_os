@@ -59,5 +59,6 @@ int main()
   assert(res == NULL);
 
   printf("main terminé\n");
+
   return 0;
 }

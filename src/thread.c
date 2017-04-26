@@ -46,19 +46,26 @@ void pre_func(void){
 	CIRCLEQ_INIT(&(thread_pool.head));
 	CIRCLEQ_INSERT_HEAD(&(thread_pool.head), thread_current, pointers);
 	
-	printf("%p\n", thread_current);
-	printf("%p\n", CIRCLEQ_FIRST(&(thread_pool.head)));
 	CIRCLEQ_INIT(&(thread_done.head));
 }
 
 __attribute__ ((__destructor__)) 
 void post_func(void){
   Element *e;
-  
+
   CIRCLEQ_FOREACH(e, &(thread_done.head),pointers){
+    fprintf(stderr, "%p\n",e);
+  }  
+  fprintf(stderr, "\n");
+  CIRCLEQ_FOREACH(e, &(thread_done.head),pointers){
+    fprintf(stderr, "%p\n",e);
     free_element(e);
+    fprintf(stderr, "free reussi\n");
+    if(e == CIRCLEQ_LAST(&(thread_done.head)))
+      break;
   }
-  //  free_element(thread_current);
+
+  free_element(thread_current);
 }
 
 void exec_and_save(void *(*func)(void*), void *funcarg){
@@ -101,9 +108,6 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg){
 	// Insert element at the head of the list
 	CIRCLEQ_INSERT_HEAD(&(thread_pool.head), pE, pointers);
 
-	printf("\n%p\n",thread_current);
-	printf("%p\n",CIRCLEQ_FIRST(&(thread_pool.head)));
-	
 	return 0;
 }
     
@@ -142,7 +146,6 @@ int thread_join(thread_t thread, void **retval){
   
   // If thread is already in thread_done, we can transfer the return value  
   CIRCLEQ_FOREACH(pE, &(thread_done.head), pointers){
-    printf("pE = %p\n", pE);
     
     if(pE->thread.id == thread){
 
@@ -187,7 +190,6 @@ int thread_join(thread_t thread, void **retval){
 
 void thread_exit(void *retval) {
   thread_current->thread.retval = retval;
-  printf("exit\n");
   // Set the next context
   struct Element *next = CIRCLEQ_NEXT(thread_current, pointers);
   if(CIRCLEQ_FIRST(&(thread_pool.head)) != CIRCLEQ_LAST(&(thread_pool.head))){ // one element
