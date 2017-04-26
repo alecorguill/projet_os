@@ -25,6 +25,7 @@ typedef struct Thread{
   ///int is_waited;
   int is_waiting;
   void *retval;
+  int valgrind_stackid;
 } Thread;
 
 typedef struct Element{
