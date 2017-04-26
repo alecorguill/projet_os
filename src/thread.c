@@ -7,7 +7,10 @@
 #define MAIN_ID		0
 /// Gérer le Main_id
 
-
+void free_element(Element *e){
+    free(e->thread.uc.uc_stack.ss_sp);
+    free(e);
+}
 
 __attribute__ ((__constructor__)) 
 void pre_func(void){
@@ -42,6 +45,15 @@ void pre_func(void){
 	CIRCLEQ_INIT(&(thread_done.head));
 }
 
+__attribute__ ((__destructor__)) 
+void post_func(void){
+  Element *e;
+  
+  CIRCLEQ_FOREACH(e, &(thread_done.head),pointers){
+    free_element(e);
+  }
+  //  free_element(thread_current);
+}
 
 void exec_and_save(void *(*func)(void*), void *funcarg){
 
@@ -153,7 +165,6 @@ int thread_join(thread_t thread, void **retval){
   }
 
 
-  pE->thread.thread_waiting_for_me = malloc(sizeof(Element));
   pE->thread.thread_waiting_for_me = thread_current; // current is waiting for me
   thread_current->thread.is_waiting = 1;
 
@@ -191,5 +202,3 @@ void thread_exit(void *retval) {
   
   swapcontext(&(old->thread.uc), &(next->thread.uc));
 }
-
-
