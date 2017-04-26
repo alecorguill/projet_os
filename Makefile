@@ -1,4 +1,4 @@
-CFLAGS = -Wall -Wextra -lpthread -Isrc -g
+CFLAGS = -Wall -Wextra -lpthread -Isrc -g -O0
 
 BIN = test/01-main.c \
 	test/12-join-main.c \
@@ -21,6 +21,9 @@ test01: thread
 
 test02: thread
 	gcc $(CFLAGS) build/thread.o test/02*.c -o 02
+
+test04: thread
+	gcc $(CFLAGS) build/thread.o test/04*.c -o 04
 
 test11: thread
 	gcc $(CFLAGS) build/thread.o test/11*.c -o 11
