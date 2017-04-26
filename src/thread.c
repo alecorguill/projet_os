@@ -7,6 +7,9 @@
 #define MAIN_ID		0
 /// Gérer le Main_id
 
+static struct List thread_pool;
+static struct List thread_done;
+static struct Element * thread_current = NULL;
 
 
 __attribute__ ((__constructor__)) 
@@ -173,23 +176,24 @@ void thread_exit(void *retval) {
   printf("exit\n");
   // Set the next context
   struct Element *next = CIRCLEQ_NEXT(thread_current, pointers);
-  if(CIRCLEQ_FIRST(&(thread_pool.head)) == CIRCLEQ_LAST(&(thread_pool.head))) // one element
-    return;
+  if(CIRCLEQ_FIRST(&(thread_pool.head)) != CIRCLEQ_LAST(&(thread_pool.head))){ // one element
   
-  // Remove current thread from the list
-  CIRCLEQ_REMOVE(&(thread_pool.head), thread_current, pointers);
-  CIRCLEQ_INSERT_HEAD(&(thread_done.head), thread_current, pointers);
+    // Remove current thread from the list
+    CIRCLEQ_REMOVE(&(thread_pool.head), thread_current, pointers);
+    CIRCLEQ_INSERT_HEAD(&(thread_done.head), thread_current, pointers);
 
-  // Other thread not waiting anymore
-  Element * pE = thread_current->thread.thread_waiting_for_me;
-  if(pE != NULL){
-	  pE->thread.is_waiting = 0;
+    // Other thread not waiting anymore
+    Element * pE = thread_current->thread.thread_waiting_for_me;
+    if(pE != NULL){
+      pE->thread.is_waiting = 0;
+    }
+
+    struct Element *old = thread_current;
+    thread_current = next;
+  
+    swapcontext(&(old->thread.uc), &(next->thread.uc));
   }
-
-  struct Element *old = thread_current;
-  thread_current = next;
-  
-  swapcontext(&(old->thread.uc), &(next->thread.uc));
+  exit(EXIT_SUCCESS);
 }
 
 

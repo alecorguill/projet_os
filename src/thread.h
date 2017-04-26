@@ -36,10 +36,6 @@ typedef struct List{
   CIRCLEQ_HEAD(list, Element) head;
 } List;
 
-static struct List thread_pool;
-static struct List thread_done;
-static struct Element * thread_current = NULL;
-
 /* recuperer l'identifiant du thread courant.
  */
 extern thread_t thread_self(void);
