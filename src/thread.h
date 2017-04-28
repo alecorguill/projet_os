@@ -15,11 +15,10 @@ struct List;
  *     mais attention aux inconvénient des tableaux de threads
  *     (consommation mémoire, cout d'allocation, ...).
  */
-typedef void * thread_t;
+typedef struct Thread * thread_t;
 struct Element;
 
 typedef struct Thread{
-  thread_t id;
   ucontext_t uc;
   struct Element *thread_waiting_for_me;
   ///int is_waited;
@@ -29,7 +28,7 @@ typedef struct Thread{
 } Thread;
 
 typedef struct Element{
-  struct Thread thread;
+  thread_t thread;
   CIRCLEQ_ENTRY(Element) pointers;
 } Element;
 
