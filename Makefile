@@ -22,9 +22,6 @@ test01: thread
 test02: thread
 	gcc $(CFLAGS) build/thread.o test/02*.c -o 02
 
-test04: thread
-	gcc $(CFLAGS) build/thread.o test/04*.c -o 04
-
 test11: thread
 	gcc $(CFLAGS) build/thread.o test/11*.c -o 11
 
@@ -48,6 +45,9 @@ test32: thread
 
 test51: thread
 	gcc $(CFLAGS) build/thread.o test/51*.c -o 51
+
+test52: thread
+	gcc $(CFLAGS) build/thread.o test/52*.c -o 52
 
 test61: thread
 	gcc $(CFLAGS) build/thread.o test/61*.c -o 61
