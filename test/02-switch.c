@@ -34,8 +34,6 @@ int main()
   void *res;
   int err, i;
 
-  printf("coucou");
-
   err = thread_create(&th1, thfunc, "fils1");
   assert(!err);
   err = thread_create(&th2, thfunc, "fils2");
