@@ -22,7 +22,7 @@ void print_list(struct List * l){
   /* //while( CIRCLEQ_NEXT(t, pointers) != thread_current ){ */
   /*   fprintf(stderr, "element: %p\n", t); */
   /*   t = CIRCLEQ_LOOP_NEXT(&l->head, t, pointers); */
-  /* } */
+  /* }  */
 }
 
 void free_thread(Thread * t){
@@ -40,7 +40,6 @@ __attribute__ ((__constructor__))
 void pre_func(void){
 	// init thread_current
 	thread_current = malloc(sizeof(Thread));
-	fprintf(stderr, "main: %p\n", thread_current);
 	getcontext(&thread_current->uc);
 	thread_current->thread_waiting_for_me = NULL;
 	thread_current->is_done = 0;
@@ -76,8 +75,8 @@ thread_t thread_self(void){
 }
 
 int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg){
+
 	Thread * t = malloc(sizeof(Thread));
-	fprintf(stderr, "%p creates %p\n", thread_self(), t);
 	// Create context 
 	getcontext(&t->uc);//avoid valgrind errors
 	t->uc.uc_stack.ss_size = 64*1024;
@@ -91,14 +90,14 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg){
 	t->retval = NULL;
 	t->valgrind_stackid = valgrind_stackid;
 	*newthread = t;
+
 	// Insert element at the end of the list
 	CIRCLEQ_INSERT_BEFORE(&(thread_pool.head), thread_current, t, pointers);
-
 	return 0;
 }
     
-int thread_yield(void){
-  
+int thread_yield(void){  
+
   Thread * new = CIRCLEQ_LOOP_NEXT(&(thread_pool.head), thread_current, pointers);
   Thread * old = thread_current;
   thread_current = new;
@@ -109,7 +108,6 @@ int thread_yield(void){
 }
 
 int thread_join(thread_t thread, void **retval){
-  fprintf(stderr, "%p joining %p\n", thread_self(), thread);
 
   //prevent a waiting thread from being yield to
   thread->thread_waiting_for_me = thread_current;
@@ -133,25 +131,22 @@ int thread_join(thread_t thread, void **retval){
 void thread_exit(void *retval) {
   thread_current->is_done = 1;
   thread_current->retval = retval;
-  Thread * next;
+  Thread * next = CIRCLEQ_LOOP_NEXT(&thread_pool.head, thread_current, pointers);
 
-  if(thread_current->thread_waiting_for_me != NULL){
-    CIRCLEQ_INSERT_AFTER(&(thread_pool.head), thread_current, thread_current->thread_waiting_for_me, pointers);
-    next = thread_current->thread_waiting_for_me;
-  }else{
-    next = CIRCLEQ_LOOP_NEXT(&thread_pool.head, thread_current, pointers);
-  }
+  /* if(thread_current->thread_waiting_for_me != NULL){ */
+  /*   CIRCLEQ_INSERT_AFTER(&(thread_pool.head), thread_current, thread_current->thread_waiting_for_me, pointers); */
+  /*   next = thread_current->thread_waiting_for_me; */
+  /* }else{ */
+  /*   next = CIRCLEQ_LOOP_NEXT(&thread_pool.head, thread_current, pointers); */
+  /* } */
   if(thread_current == next){    
-    fprintf(stderr, "1 element in thread_pool, current is %p\n", thread_self());
-    print_list(&thread_pool);
+    //if 1 element in thread pool, exit program
     exit(EXIT_SUCCESS);
   }
 
-  fprintf(stderr, "exit: %p\n", thread_current);
   //remove current thread from queue. It will be freed only if it's joined
   CIRCLEQ_REMOVE(&(thread_pool.head), thread_current, pointers);  
   //equivalent of a yield but with a setcontext instead of a swapcontext
-  fprintf(stderr, "next is %p\n", next);
   thread_current = next;
   setcontext(&(next->uc));
   fprintf(stderr, "thread_exit error\n");
