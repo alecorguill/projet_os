@@ -8,4 +8,4 @@ le main yield tout seul
 le main yield tout seul
 le main yield tout seul
 le main yield tout seul
-le main est (nil)
+le main est 0x24c5010
