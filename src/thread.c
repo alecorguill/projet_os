@@ -156,3 +156,52 @@ void thread_exit(void *retval) {
 
 
 
+int thread_mutex_init(thread_mutex_t *mutex){
+	if(mutex == NULL)
+		return 1;
+	
+	mutex->id = mutex_id++;
+	mutex->is_locked = 0;
+
+	return 0;
+}
+
+
+
+
+
+int thread_mutex_destroy(thread_mutex_t *mutex){	
+	if(mutex == NULL)
+		return 1;
+		
+	return 0;
+}
+
+int thread_mutex_lock(thread_mutex_t *mutex){
+	if(mutex == NULL)
+		return 1;
+	
+	while(mutex->is_locked){
+		thread_yield();
+	}
+	
+	/// BEWARE OF PREEMPTION HERE!
+	
+	mutex->is_locked = 1;
+	
+	return 0;
+}
+
+int thread_mutex_unlock(thread_mutex_t *mutex){
+	if(mutex == NULL)
+		return 1;
+		
+	mutex->is_locked = 0;
+		
+	return 0;
+}
+
+
+
+
+

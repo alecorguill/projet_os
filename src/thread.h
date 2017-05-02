@@ -62,8 +62,8 @@ extern void thread_exit(void *retval) __attribute__ ((__noreturn__));
 
 /* Interface possible pour les mutex */
 typedef struct thread_mutex {
-	int dummy;
-	
+	int id;
+	int is_locked;
 } thread_mutex_t;
 
 int thread_mutex_init(thread_mutex_t *mutex);
