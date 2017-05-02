@@ -43,9 +43,9 @@ void pre_func(void){
 	getcontext(&thread_current->uc);
 	thread_current->thread_waiting_for_me = NULL;
 	thread_current->is_done = 0;
-	thread_current->retval = NULL;
+	thread_current->retval = NULL; 
 	thread_current->valgrind_stackid = MAIN_STACK;
-	
+	 
 	// point to head (beacon)
 	thread_current->pointers.cqe_next = (void *)(&thread_pool.head);
 	thread_current->pointers.cqe_prev = (void *)(&thread_pool.head);
@@ -108,7 +108,7 @@ int thread_yield(void){
 }
 
 int thread_join(thread_t thread, void **retval){
-
+  
   //prevent a waiting thread from being yield to
   thread->thread_waiting_for_me = thread_current;
   //CIRCLEQ_REMOVE(&(thread_pool.head), thread_current, pointers);
@@ -154,25 +154,6 @@ void thread_exit(void *retval) {
 }
 
 
-
-
-int thread_mutex_init(thread_mutex_t *mutex){
-	
-	
-	
-	
-	
-	
-	
-}
-
-
-
-
-
-int thread_mutex_destroy(thread_mutex_t *mutex);
-int thread_mutex_lock(thread_mutex_t *mutex);
-int thread_mutex_unlock(thread_mutex_t *mutex);
 
 
 

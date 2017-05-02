@@ -7,7 +7,6 @@ BIN = test/01-main.c \
 	test/02-switch.c \
 	test/21-create-many.c \
 	test/31-switch-many.c \
-	test/61-mutex.c \
 	test/11-join.c \
 	test/22-create-many-recursive.c \
 	test/32-switch-many-join.c
@@ -19,7 +18,7 @@ NB_FIBO = 7
 all: $(BIN)
 
 # TEST D'EXECUTION #
-tests: test01 test02 test11 test12 test21 test22 test23 test31 test32 test51 test61
+tests: test01 test02 test11 test12 test21 test22 test23 test31 test32 test51
 
 test01: thread 
 	gcc $(CFLAGS) build/thread.o test/01-main.c -o 01
@@ -53,9 +52,6 @@ test51: thread
 
 test52: thread
 	gcc $(CFLAGS) build/thread.o test/52*.c -o 52
-
-test61: thread
-	gcc $(CFLAGS) build/thread.o test/61*.c -o 61
 
 thread:
 	gcc $(CFLAGS) -c src/thread.c
