@@ -1,1 +1,1 @@
-arguments manquants: nombre de threads, puis nombre de yield
+5 yield avec 2 threads
