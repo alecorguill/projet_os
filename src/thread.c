@@ -198,6 +198,7 @@ int thread_mutex_unlock(thread_mutex_t *mutex){
 		return 1;
 		
 	mutex->is_locked = 0;
+	thread_yield(); // nice gesture
 		
 	return 0;
 }
