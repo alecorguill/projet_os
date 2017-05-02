@@ -1,15 +1,16 @@
 #!/bin/bash
 
+
 if [ $# -eq 1 ]
 then
-    ./$1 | sed /0x/d | sort> ./correct/$1.txt
+    ./$1 | sed /0x/d | cut -d":" -f1 | sort > ./correct/$1.txt
     
 elif [ $# -eq 2 ]
 then
-    ./$1 $2 | sed /0x/d | sort > ./correct/$1.txt
-elif [ $# -eq 2 ]
+    ./$1 $2 | sed /0x/d | cut -d":" -f1 | sort > ./correct/$1.txt
+elif [ $# -eq 3 ]
 then
-    ./$1 $2 $3 | sed /0x/d | sort > ./correct/$1.txt
+    ./$1 $2 $3 | sed /0x/d | cut -d":" -f1 | sort > ./correct/$1.txt
 else echo "Problem nb arg"
 fi
 
