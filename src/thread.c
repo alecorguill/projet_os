@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include "thread.h"
 
+static int mutex_id = 0;
 static struct List thread_pool;
 static Thread * thread_current = NULL;
 
