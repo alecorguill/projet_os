@@ -10,7 +10,8 @@ BIN = test/01-main.c \
 	test/11-join.c \
 	test/22-create-many-recursive.c \
 	test/32-switch-many-join.c \
-	test/52-big-sum.c
+	test/52-big-sum.c \
+	test/53-fusion-sort.c
 
 NB_THREAD = 2
 NB_YIELD = 5
@@ -19,7 +20,7 @@ NB_FIBO = 7
 all: $(BIN)
 
 # TEST D'EXECUTION #
-tests: test01 test02 test11 test12 test21 test22 test23 test31 test32 test51 test52 test61
+tests: test01 test02 test11 test12 test21 test22 test23 test31 test32 test51 test52 test53 test61
 
 test01: thread 
 	gcc $(CFLAGS) build/thread.o test/01-main.c -o 01
@@ -53,6 +54,9 @@ test51: thread
 
 test52: thread
 	gcc $(CFLAGS) build/thread.o test/52*.c -o 52
+
+test53: thread
+	gcc $(CFLAGS) build/thread.o test/53*.c -o 53
 
 test61: thread
 	gcc $(CFLAGS) build/thread.o test/61*.c -o 61
