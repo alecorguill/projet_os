@@ -19,7 +19,7 @@ NB_FIBO = 7
 all: $(BIN)
 
 # TEST D'EXECUTION #
-tests: test01 test02 test11 test12 test21 test22 test23 test31 test32 test51
+tests: test01 test02 test11 test12 test21 test22 test23 test31 test32 test51 test61
 
 test01: thread 
 	gcc $(CFLAGS) build/thread.o test/01-main.c -o 01
