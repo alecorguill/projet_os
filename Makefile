@@ -7,7 +7,6 @@ BIN = test/01-main.c \
 	test/02-switch.c \
 	test/21-create-many.c \
 	test/31-switch-many.c \
-	test/61-mutex.c \
 	test/11-join.c \
 	test/22-create-many-recursive.c \
 	test/32-switch-many-join.c

@@ -20,15 +20,15 @@ static void * thfunc(void *_nbyield)
   unsigned long nbyield = (unsigned long) _nbyield;
   unsigned long i;
 
-  for(i=0; i<nbyield; i++)
+  for(i=0; i< nbyield; i++)
     thread_yield();
   return NULL;
 }
 
 int main(int argc, char *argv[])
 {
-  int nbth, i, err;
-  unsigned long nbyield;
+  int err;
+  unsigned long i, nbth, nbyield;
   thread_t *ths;
   struct timeval tv1, tv2;
   unsigned long us;
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 
   gettimeofday(&tv2, NULL);
   us = (tv2.tv_sec-tv1.tv_sec)*1000000+(tv2.tv_usec-tv1.tv_usec);
-  printf("%ld yield avec %d threads: %ld us\n",
+  printf("%ld yield avec %ld threads: %ld us\n",
 	 nbyield, nbth, us);
 
   free(ths);
