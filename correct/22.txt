@@ -1,1 +1,0 @@
-2 threads créés et détruits récursivement
