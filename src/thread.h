@@ -6,8 +6,9 @@
 #include <ucontext.h>
 #include <sys/queue.h>
 
+#define MAIN_STACK -1
+
 struct Thread;
-struct Element;
 struct List;
 
 /* identifiant de thread
@@ -16,24 +17,18 @@ struct List;
  *     (consommation mémoire, cout d'allocation, ...).
  */
 typedef struct Thread * thread_t;
-struct Element;
 
 typedef struct Thread{
   ucontext_t uc;
-  struct Element *thread_waiting_for_me;
-  ///int is_waited;
-  int is_waiting;
-  void *retval;
+  struct Thread *thread_waiting_for_me;
+  char is_done; //1 if thread has ended, else 0
+  void *retval; //retval of the thread when ended (not the retval of the waited thread)
   int valgrind_stackid;
+  CIRCLEQ_ENTRY(Thread) pointers;
 } Thread;
 
-typedef struct Element{
-  thread_t thread;
-  CIRCLEQ_ENTRY(Element) pointers;
-} Element;
-
 typedef struct List{
-  CIRCLEQ_HEAD(list, Element) head;
+  CIRCLEQ_HEAD(list, Thread) head;
 } List;
 
 /* recuperer l'identifiant du thread courant.
@@ -66,7 +61,11 @@ extern int thread_join(thread_t thread, void **retval);
 extern void thread_exit(void *retval) __attribute__ ((__noreturn__));
 
 /* Interface possible pour les mutex */
-typedef struct thread_mutex { int dummy; } thread_mutex_t;
+typedef struct thread_mutex {
+	int dummy;
+	
+} thread_mutex_t;
+
 int thread_mutex_init(thread_mutex_t *mutex);
 int thread_mutex_destroy(thread_mutex_t *mutex);
 int thread_mutex_lock(thread_mutex_t *mutex);
