@@ -2,13 +2,14 @@
 
 if [ $# -eq 1 ]
 then
-    ./$1 > ./correct/$1.txt
+    ./$1 | sed /0x/d | sort> ./correct/$1.txt
+    
 elif [ $# -eq 2 ]
 then
-    ./$1 $2 > ./correct/$1.txt
+    ./$1 $2 | sed /0x/d | sort > ./correct/$1.txt
 elif [ $# -eq 2 ]
 then
-    ./$1 $2 $3> ./correct/$1.txt
+    ./$1 $2 $3 | sed /0x/d | sort > ./correct/$1.txt
 else echo "Problem nb arg"
 fi
 
