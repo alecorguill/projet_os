@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <errno.h>
 #include "thread.h"
 
 /* fibonacci.
@@ -42,7 +43,11 @@ static void * fibo(void *_value)
 */
   err = thread_create(&th, fibo, (void*)(value-1));
   assert(!err);
+  if(err != 0)
+    perror("create");
   err = thread_create(&th2, fibo, (void*)(value-2));
+  if(err != 0)
+    perror("create");
   assert(!err);
   
   

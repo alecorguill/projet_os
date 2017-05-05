@@ -231,9 +231,7 @@ int thread_mutex_lock(thread_mutex_t *mutex){
 		thread_yield();
 	}
 	
-	/// BEWARE OF PREEMPTION HERE!
-	
-	mutex->is_locked = 1;
+	__sync_lock_test_and_set(&(mutex->is_locked), 1);
 	
 	return 0;
 }

@@ -1,7 +1,7 @@
 #!/bin/bash
 gcc -Wall -Wextra -pthread -Isrc -DUSE_PTHREAD test/51-fibonacci.c -o 51_pthread
 echo \#Fichier de comparaison de temps d execution sur fibonacci > graph.data
-for((i=0;i<30;i++))
+for((i=0;i<20;i++))
 do
 start=`date +%s%N`
 start=$((start/1000))
