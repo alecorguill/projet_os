@@ -3,11 +3,43 @@
 #include <sys/queue.h>
 #include <valgrind/valgrind.h>
 #include <unistd.h>
+#include <sys/time.h>
 #include "thread.h"
 
+#define TIMEOUT 4000//micro_s before preemption
 static int mutex_id = 0;
 static struct List thread_pool;
 static Thread * thread_current = NULL;
+char preemption;
+struct timeval last_yield;
+
+
+unsigned long get_duration(struct timeval* t1, struct timeval* t2){
+  //return time in micro_s
+  return (t2->tv_sec - t1->tv_sec) * 1000000 + (t2->tv_usec - t1->tv_usec);
+}
+
+void set_alarm(){
+  struct timeval now;
+  gettimeofday(&now, NULL);
+  unsigned long diff = get_duration(&last_yield, &now);
+  if(diff <= 0){
+    diff = 1;
+  }else if(diff > TIMEOUT){
+    diff = TIMEOUT;
+  }
+  //fprintf(stderr, "diff %lu\n", diff);
+  preemption = 1;
+  ualarm(TIMEOUT - diff, TIMEOUT);
+}
+
+void preempter(__attribute__((__unused__)) int signo){
+  if(preemption){
+    fprintf(stderr, "preemption\n");
+    gettimeofday(&last_yield, NULL);
+    thread_yield();
+  }
+}
 
 /*
   Debug function
@@ -39,25 +71,28 @@ void free_thread(Thread * t){
 
 __attribute__ ((__constructor__)) 
 void pre_func(void){
-	// init thread_current
-	thread_current = malloc(sizeof(Thread));
-	getcontext(&thread_current->uc);
-	thread_current->thread_waiting_for_me = NULL;
-	thread_current->is_done = 0;
-	thread_current->retval = NULL; 
-	thread_current->valgrind_stackid = MAIN_STACK;
+  signal(SIGALRM, preempter);
+  // init thread_current
+  thread_current = malloc(sizeof(Thread));
+  getcontext(&thread_current->uc);
+  thread_current->thread_waiting_for_me = NULL;
+  thread_current->is_done = 0;
+  thread_current->retval = NULL; 
+  thread_current->valgrind_stackid = MAIN_STACK;
 	 
-	// point to head (beacon)
-	thread_current->pointers.cqe_next = (void *)(&thread_pool.head);
-	thread_current->pointers.cqe_prev = (void *)(&thread_pool.head);
+  // point to head (beacon)
+  thread_current->pointers.cqe_next = (void *)(&thread_pool.head);
+  thread_current->pointers.cqe_prev = (void *)(&thread_pool.head);
 
-	// set thread_current to first
-	CIRCLEQ_INIT(&(thread_pool.head));
-	CIRCLEQ_INSERT_HEAD(&(thread_pool.head), thread_current, pointers);       
+  // set thread_current to first
+  CIRCLEQ_INIT(&(thread_pool.head));
+  CIRCLEQ_INSERT_HEAD(&(thread_pool.head), thread_current, pointers);       
+  gettimeofday(&last_yield, NULL);
 }
 
 __attribute__ ((__destructor__)) 
 void post_func(void){
+  preemption = 0;
   Thread * next;
   while( (next = CIRCLEQ_LOOP_NEXT(&thread_pool.head, thread_current, pointers)) != thread_current ){
     CIRCLEQ_REMOVE(&thread_pool.head, next, pointers);
@@ -76,40 +111,46 @@ thread_t thread_self(void){
 }
 
 int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg){
+  preemption = 0;
 
-	Thread * t = malloc(sizeof(Thread));
-	// Create context 
-	getcontext(&t->uc);//avoid valgrind errors
-	t->uc.uc_stack.ss_size = 64*1024;
-	t->uc.uc_stack.ss_sp = malloc(t->uc.uc_stack.ss_size);
-	int valgrind_stackid = VALGRIND_STACK_REGISTER(t->uc.uc_stack.ss_sp, t->uc.uc_stack.ss_sp + t->uc.uc_stack.ss_size);
-	makecontext(&t->uc, (void (*)(void)) exec_and_save, 2, func, funcarg);
+  Thread * t = malloc(sizeof(Thread));
+  // Create context 
+  getcontext(&t->uc);//avoid valgrind errors
+  t->uc.uc_stack.ss_size = 64*1024;
+  t->uc.uc_stack.ss_sp = malloc(t->uc.uc_stack.ss_size);
+  int valgrind_stackid = VALGRIND_STACK_REGISTER(t->uc.uc_stack.ss_sp, t->uc.uc_stack.ss_sp + t->uc.uc_stack.ss_size);
+  makecontext(&t->uc, (void (*)(void)) exec_and_save, 2, func, funcarg);
 	
-	// Create thread corresponding to context
-	t->thread_waiting_for_me = NULL;
-	t->is_done = 0;
-	t->retval = NULL;
-	t->valgrind_stackid = valgrind_stackid;
-	*newthread = t;
+  // Create thread corresponding to context
+  t->thread_waiting_for_me = NULL;
+  t->is_done = 0;
+  t->retval = NULL;
+  t->valgrind_stackid = valgrind_stackid;
+  *newthread = t;
 
-	// Insert element at the end of the list
-	CIRCLEQ_INSERT_BEFORE(&(thread_pool.head), thread_current, t, pointers);
-	return 0;
+  // Insert element at the end of the list
+  CIRCLEQ_INSERT_BEFORE(&(thread_pool.head), thread_current, t, pointers);
+  set_alarm();
+  return 0;
 }
     
 int thread_yield(void){  
+  preemption = 0;
 
   Thread * new = CIRCLEQ_LOOP_NEXT(&(thread_pool.head), thread_current, pointers);
   Thread * old = thread_current;
   thread_current = new;
+  preemption = 1;
   if(new != old){//do not swap on same context
+    gettimeofday(&last_yield, NULL);
+    ualarm(TIMEOUT, TIMEOUT);        
     return swapcontext(&(old->uc), &(new->uc));
   }
   return 0;
 }
 
 int thread_join(thread_t thread, void **retval){
-  
+  preemption = 0;
   //prevent a waiting thread from being yield to
   thread->thread_waiting_for_me = thread_current;
   //CIRCLEQ_REMOVE(&(thread_pool.head), thread_current, pointers);
@@ -125,11 +166,14 @@ int thread_join(thread_t thread, void **retval){
   //CIRCLEQ_INSERT_AFTER(&(thread_pool.head), thread_current, thread->thread_waiting_for_me, pointers);
   //free the joined thread
   free_thread(thread);
+  set_alarm();
   return 0;
 }
 
 
 void thread_exit(void *retval) {
+  preemption = 0;
+
   thread_current->is_done = 1;
   thread_current->retval = retval;
   Thread * next = CIRCLEQ_LOOP_NEXT(&thread_pool.head, thread_current, pointers);
@@ -149,6 +193,7 @@ void thread_exit(void *retval) {
   CIRCLEQ_REMOVE(&(thread_pool.head), thread_current, pointers);  
   //equivalent of a yield but with a setcontext instead of a swapcontext
   thread_current = next;
+  set_alarm();
   setcontext(&(next->uc));
   fprintf(stderr, "thread_exit error\n");
   exit(EXIT_FAILURE);//avoid no_return related warning
