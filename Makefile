@@ -99,7 +99,7 @@ ptest61: test61
 	./test.sh 61 $(NB_THREAD)
 
 clean:
-	rm -rf build/* src/*~ src/#* test/*~ test/#* ./01* ./02* ./11* ./12* ./21* ./22* ./23* ./31* ./32* ./51* ./61*
+	rm -rf build/* src/*~ src/#* test/*~ test/#* ./01* ./02* ./11* ./12* ./21* ./22* ./23* ./31* ./32* ./51* ./52* ./53* ./61*
 
 .PHONY: all clean 
 
