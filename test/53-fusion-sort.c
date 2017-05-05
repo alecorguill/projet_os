@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <time.h>
 #include "thread.h"
 
  
 typedef struct Bigtab{
-  unsigned* tab;
-  int len;
+  unsigned long* tab;
+  unsigned len;
 } Bigtab;
 
 
@@ -15,7 +16,7 @@ static void * fusionsort(void *_bigtab)
   thread_t th, th2;
   int err;
   void *res = NULL, *res2 = NULL;
-  int i, j1, j2;
+  unsigned i, j1, j2;
   Bigtab* bigtab = (Bigtab*) _bigtab;
 
   /* on passe un peu la main aux autres pour eviter de faire uniquement la partie gauche de l'arbre */
@@ -82,7 +83,7 @@ int main(int argc, char *argv[])
   Bigtab bigtab;
   bigtab.tab = malloc(n*sizeof(unsigned));
   bigtab.len = n;
-  int i;
+  unsigned i;
   for(i=0; i<n; i++)
 	  bigtab.tab[i] = rand()%n;
   
@@ -90,7 +91,7 @@ int main(int argc, char *argv[])
   printf("fusion sort de %ld:\n", n);
   
   for(i=0; i<bigtab.len; i++){
-	printf("%d ", bigtab.tab[i]);
+	printf("%ld ", bigtab.tab[i]);
   }
   printf("\n");
   

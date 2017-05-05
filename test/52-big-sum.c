@@ -5,7 +5,7 @@
 
  
 typedef struct Bigtab{
-  unsigned* tab;
+  unsigned long* tab;
   unsigned len;
 } Bigtab;
 
