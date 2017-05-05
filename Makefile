@@ -17,7 +17,7 @@ NB_THREAD = 2
 NB_YIELD = 5
 NB_FIBO = 7
 
-all: $(BIN)
+all: $(BIN) 
 
 # TEST D'EXECUTION #
 tests: test01 test02 test11 test12 test21 test22 test23 test31 test32 test51 test52 test53 test61
