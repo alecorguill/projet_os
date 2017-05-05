@@ -29,11 +29,8 @@ static void * fusionsort(void *_bigtab)
   Bigtab bigtab1, bigtab2;
   bigtab1.len = (bigtab->len)/2;
   bigtab2.len = bigtab->len - bigtab1.len;
-  bigtab1.tab = malloc(bigtab1.len*sizeof(unsigned));
-  bigtab2.tab = malloc(bigtab2.len*sizeof(unsigned));
-
-  for(i=0; i<bigtab1.len; i++) bigtab1.tab[i] = bigtab->tab[i];
-  for(i=0; i<bigtab2.len; i++) bigtab2.tab[i] = bigtab->tab[bigtab1.len + i];
+  bigtab1.tab = &(bigtab->tab[0]);
+  bigtab2.tab = &(bigtab->tab[bigtab1.len]);
 
   err = thread_create(&th, fusionsort, (void*)(&bigtab1));
   assert(!err);
@@ -63,9 +60,6 @@ static void * fusionsort(void *_bigtab)
 	bigtab->tab[i] = bigtab2.tab[j2++];
   }
   
-  free(bigtab1.tab);
-  free(bigtab2.tab);  
-
   return (void*) bigtab;
 }
 
@@ -81,11 +75,13 @@ int main(int argc, char *argv[])
   n = atoi(argv[1]);
   
   Bigtab bigtab;
-  bigtab.tab = malloc(n*sizeof(unsigned));
+  bigtab.tab = malloc(n*sizeof(unsigned long));
   bigtab.len = n;
   unsigned i;
-  for(i=0; i<n; i++)
-	  bigtab.tab[i] = rand()%n;
+  for(i=0; i<n; i++){
+	  bigtab.tab[i] = (unsigned long)(rand()%n);
+	  printf("tab[%d] = %ld\n", i, bigtab.tab[i]);
+  }
   
   fusionsort((void *)(&bigtab));
   printf("fusion sort de %ld:\n", n);

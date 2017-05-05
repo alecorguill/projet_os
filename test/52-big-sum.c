@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
   n = atoi(argv[1]);
   
   Bigtab bigtab;
-  bigtab.tab = malloc(n*sizeof(unsigned));
+  bigtab.tab = malloc(n*sizeof(unsigned long));
   bigtab.len = n;
   unsigned long i;
   for(i=0; i<n; i++){
