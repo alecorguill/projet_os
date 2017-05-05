@@ -14,8 +14,10 @@ BIN = test/01-main.c \
 	test/53-fusion-sort.c
 
 NB_THREAD = 2
-NB_YIELD = 5
-NB_FIBO = 7
+NB_YIELD = 4
+NB_FIBO = 8
+NB_BIGSUM = 500
+NB_SORT = 500
 
 all: $(BIN) 
 
@@ -67,7 +69,7 @@ thread:
 
 # TEST COMPARAISON P_THREAD #
 
-check: tests ptest01 ptest02 ptest11 ptest12 ptest21 ptest22 ptest23 ptest31 ptest32 ptest51 
+check: tests ptest01 ptest02 ptest11 ptest12 ptest21 ptest22 ptest23 ptest31 ptest32 ptest51 ptest52 ptest53 ptest61
 
 ptest01: test01 
 	./test.sh 01
@@ -89,6 +91,10 @@ ptest32: test32
 	./test.sh 32 $(NB_THREAD) $(NB_YIELD)
 ptest51: test51 
 	./test.sh 51 $(NB_FIBO)
+ptest52: test52
+	./test.sh 52 $(NB_BIGSUM)
+ptest53: test53
+	./test.sh 53 $(NB_SORT)
 ptest61: test61 
 	./test.sh 61 $(NB_THREAD)
 
