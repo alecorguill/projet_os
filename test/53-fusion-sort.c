@@ -84,7 +84,10 @@ int main(int argc, char *argv[])
   bigtab.tab = malloc(n*sizeof(unsigned long));
   bigtab.len = n;
   unsigned i;
-  for(i=0; i<n; i++) bigtab.tab[i] = (unsigned long)(rand()%n);
+  for(i=0; i<n; i++){
+	  //bigtab.tab[i] = (unsigned long)(rand()%n); // Random tab
+	  bigtab.tab[i] = (unsigned long)(n-i); // Decreasing tab
+  }
   
   fusionsort((void *)(&bigtab));
   printf("fusion sort de %ld:\n", n);
