@@ -12,16 +12,33 @@ BIN = test/01-main.c \
 	test/32-switch-many-join.c \
 	test/52-big-sum.c \
 
-NB_THREAD = 2
-NB_YIELD = 4
-NB_FIBO = 8
-NB_BIGSUM = 500
-NB_SORT = 500
+NB_THREAD_1 = 2
+NB_THREAD_2 = 10
+NB_THREAD_3 = 100
+NB_THREAD_4 = 1000
+NB_THREAD_5 = 5000
+
+NB_YIELD_1 = 4
+NB_YIELD_2 = 20
+NB_YIELD_3 = 100
+NB_YIELD_4 = 500
+
+NB_FIBO_1 = 4
+NB_FIBO_2 = 8
+NB_FIBO_3 = 12
+
+NB_BIGSUM_1 = 100
+NB_BIGSUM_2 = 500
+NB_BIGSUM_3 = 1000
+
+NB_SORT_1 = 100
+NB_SORT_2 = 500
+NB_SORT_3 = 1000
 
 all: tests
 
 # TEST D'EXECUTION #
-tests: test01 test02 test11 test12 test21 test22 test23 test31 test32 test51 test52 test61
+tests: test01 test02 test11 test12 test21 test22 test23 test31 test32 test51 test52 test53 test61
 
 test01: thread 
 	gcc $(CFLAGS) build/thread.o test/01-main.c -o 01
@@ -56,8 +73,8 @@ test51: thread
 test52: thread
 	gcc $(CFLAGS) build/thread.o test/52*.c -o 52
 
-# test53: thread
-# 	gcc $(CFLAGS) build/thread.o test/53*.c -o 53
+test53: thread
+	gcc $(CFLAGS) build/thread.o test/53*.c -o 53
 
 test61: thread
 	gcc $(CFLAGS) build/thread.o test/61*.c -o 61
@@ -79,23 +96,53 @@ ptest11: test11
 ptest12: test12 
 	./test.sh 12
 ptest21: test21 
-	./test.sh 21 $(NB_THREAD)
+	./test.sh 21 $(NB_THREAD_1)
+	./test.sh 21 $(NB_THREAD_2)
+	./test.sh 21 $(NB_THREAD_3)
+	./test.sh 21 $(NB_THREAD_4)
+	./test.sh 21 $(NB_THREAD_5)
 ptest22: test22 
-	./test.sh 22 $(NB_THREAD)
+	./test.sh 22 $(NB_THREAD_1)
+	./test.sh 22 $(NB_THREAD_2)
+	./test.sh 22 $(NB_THREAD_3)
+# 	./test.sh 22 $(NB_THREAD_4)
+#	./test.sh 22 $(NB_THREAD_5) 
 ptest23: test23 
-	./test.sh 23 $(NB_THREAD)
-ptest31: test31 
-	./test.sh 31 $(NB_THREAD) $(NB_YIELD)
+	./test.sh 23 $(NB_THREAD_1)
+	./test.sh 23 $(NB_THREAD_2)
+	./test.sh 23 $(NB_THREAD_3)
+	./test.sh 23 $(NB_THREAD_4)
+	./test.sh 23 $(NB_THREAD_5) 
+ptest31: test31
+	./test.sh 31 $(NB_THREAD_1) $(NB_YIELD_1)
+	./test.sh 31 $(NB_THREAD_2) $(NB_YIELD_4)
+	./test.sh 31 $(NB_THREAD_3) $(NB_YIELD_3)
+	./test.sh 31 $(NB_THREAD_4) $(NB_YIELD_2)
+# 	./test.sh 31 $(NB_THREAD_5) $(NB_YIELD_4)
 ptest32: test32 
-	./test.sh 32 $(NB_THREAD) $(NB_YIELD)
+	./test.sh 32 $(NB_THREAD_1) $(NB_YIELD_4)
+	./test.sh 32 $(NB_THREAD_2) $(NB_YIELD_2)
+	./test.sh 32 $(NB_THREAD_3) $(NB_YIELD_1)
+# 	./test.sh 32 $(NB_THREAD_4) $(NB_YIELD_2)
+# 	./test.sh 32 $(NB_THREAD_5) $(NB_YIELD_3)
 ptest51: test51 
-	./test.sh 51 $(NB_FIBO)
+	./test.sh 51 $(NB_FIBO_1)
+	./test.sh 51 $(NB_FIBO_2)
+	./test.sh 51 $(NB_FIBO_3)
 ptest52: test52
-	./test.sh 52 $(NB_BIGSUM)
+	./test.sh 52 $(NB_BIGSUM_1)
+	./test.sh 52 $(NB_BIGSUM_2)
+#	./test.sh 52 $(NB_BIGSUM_3)
 ptest53: test53
-	./test.sh 53 $(NB_SORT)
+	./test.sh 53 $(NB_SORT_1)
+	./test.sh 53 $(NB_SORT_2)
+#	./test.sh 53 $(NB_SORT_3)
 ptest61: test61 
-	./test.sh 61 $(NB_THREAD)
+	./test.sh 61 $(NB_THREAD_1)
+	./test.sh 61 $(NB_THREAD_2)
+	./test.sh 61 $(NB_THREAD_3)
+#	./test.sh 61 $(NB_THREAD_4)
+#	./test.sh 61 $(NB_THREAD_5)
 
 clean:
 	rm -rf build/* src/*~ src/#* test/*~ test/#* ./01* ./02* ./11* ./12* ./21* ./22* ./23* ./31* ./32* ./51* ./52* ./53* ./61*
