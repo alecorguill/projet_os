@@ -3,14 +3,15 @@ CFLAGS = -Wall -Wextra -lpthread -Isrc -g -O0
 BIN = test/01-main.c \
 	test/12-join-main.c \
 	test/23-create-many-once.c \
-	test/51-fibonacci.c \
 	test/02-switch.c \
 	test/21-create-many.c \
 	test/31-switch-many.c \
 	test/11-join.c \
 	test/22-create-many-recursive.c \
 	test/32-switch-many-join.c \
+	test/51-fibonacci.c \
 	test/52-big-sum.c \
+	test/62-preemption.c \
 
 NB_THREAD = 2
 NB_YIELD = 4
@@ -21,7 +22,7 @@ NB_SORT = 500
 all: tests
 
 # TEST D'EXECUTION #
-tests: test01 test02 test11 test12 test21 test22 test23 test31 test32 test51 test52 test61
+tests: test01 test02 test11 test12 test21 test22 test23 test31 test32 test51 test52 test61 test62
 
 test01: thread 
 	gcc $(CFLAGS) build/thread.o test/01-main.c -o 01
@@ -56,11 +57,14 @@ test51: thread
 test52: thread
 	gcc $(CFLAGS) build/thread.o test/52*.c -o 52
 
-# test53: thread
-# 	gcc $(CFLAGS) build/thread.o test/53*.c -o 53
+test53: thread
+	gcc $(CFLAGS) build/thread.o test/53*.c -o 53
 
 test61: thread
 	gcc $(CFLAGS) build/thread.o test/61*.c -o 61
+
+test62: thread
+	gcc $(CFLAGS) build/thread.o test/62*.c -o 62
 
 thread:
 	gcc $(CFLAGS) -c src/thread.c
@@ -68,7 +72,7 @@ thread:
 
 # TEST COMPARAISON P_THREAD #
 
-check: tests ptest01 ptest02 ptest11 ptest12 ptest21 ptest22 ptest23 ptest31 ptest32 ptest51 ptest52 ptest53 ptest61
+check: tests ptest01 ptest02 ptest11 ptest12 ptest21 ptest22 ptest23 ptest31 ptest32 ptest51 ptest52 ptest53 ptest61 ptest62
 
 ptest01: test01 
 	./test.sh 01
@@ -96,6 +100,8 @@ ptest53: test53
 	./test.sh 53 $(NB_SORT)
 ptest61: test61 
 	./test.sh 61 $(NB_THREAD)
+ptest62: test62 
+	./test.sh 62
 
 clean:
 	rm -rf build/* src/*~ src/#* test/*~ test/#* ./01* ./02* ./11* ./12* ./21* ./22* ./23* ./31* ./32* ./51* ./52* ./53* ./61*

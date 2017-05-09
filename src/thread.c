@@ -6,13 +6,21 @@
 #include <sys/time.h>
 #include "thread.h"
 
-#define TIMEOUT 4000//micro_s before preemption
+#define TIMEOUT 4000//4ms before preemption
 static int mutex_id = 0;
 static struct List thread_pool;
 static Thread * thread_current = NULL;
 char preemption;
 struct timeval last_yield;
 
+
+void preempter(__attribute__((__unused__)) int signo){
+  if(preemption){
+    fprintf(stderr, "preemption\n");
+    gettimeofday(&last_yield, NULL);
+    thread_yield();
+  }
+}
 
 unsigned long get_duration(struct timeval* t1, struct timeval* t2){
   //return time in micro_s
@@ -23,21 +31,14 @@ void set_alarm(){
   struct timeval now;
   gettimeofday(&now, NULL);
   unsigned long diff = get_duration(&last_yield, &now);
-  if(diff <= 0){
-    diff = 1;
-  }else if(diff > TIMEOUT){
-    diff = TIMEOUT;
-  }
-  //fprintf(stderr, "diff %lu\n", diff);
-  preemption = 1;
-  ualarm(TIMEOUT - diff, TIMEOUT);
-}
-
-void preempter(__attribute__((__unused__)) int signo){
-  if(preemption){
-    fprintf(stderr, "preemption\n");
-    gettimeofday(&last_yield, NULL);
-    thread_yield();
+  //fprintf(stderr, "prochaine alarme dans %lu micro secondes\n", TIMEOUT - diff);
+  if(diff >= TIMEOUT){
+    //TIMEOUT over
+    //(no need to reactivate preemption for the yield)
+    preempter(0);
+  }else{
+    preemption = 1;
+    ualarm(TIMEOUT - diff, 0);
   }
 }
 
@@ -142,8 +143,8 @@ int thread_yield(void){
   thread_current = new;
   preemption = 1;
   if(new != old){//do not swap on same context
-    gettimeofday(&last_yield, NULL);
-    ualarm(TIMEOUT, TIMEOUT);        
+    gettimeofday(&last_yield, NULL);    
+    ualarm(TIMEOUT, 0);        
     return swapcontext(&(old->uc), &(new->uc));
   }
   return 0;
