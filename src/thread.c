@@ -7,9 +7,13 @@
 #include "thread.h"
 
 #define TIMEOUT 4000//4ms before preemption
+#define PREEMPTION
+
 static int mutex_id = 0;
 static struct List thread_pool;
 static Thread * thread_current = NULL;
+
+#ifdef PREEMPTION
 char preemption;
 struct timeval last_yield;
 
@@ -41,6 +45,8 @@ void set_alarm(){
     ualarm(TIMEOUT - diff, 0);
   }
 }
+#endif
+
 
 /*
   Debug function
@@ -72,7 +78,9 @@ void free_thread(Thread * t){
 
 __attribute__ ((__constructor__)) 
 void pre_func(void){
+  #ifdef PREEMPTION
   signal(SIGALRM, preempter);
+  #endif
   // init thread_current
   thread_current = malloc(sizeof(Thread));
   getcontext(&thread_current->uc);
@@ -112,7 +120,9 @@ thread_t thread_self(void){
 }
 
 int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg){
+  #ifdef PREEMPTION
   preemption = 0;
+  #endif
 
   Thread * t = malloc(sizeof(Thread));
   // Create context 
@@ -131,27 +141,40 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg){
 
   // Insert element at the end of the list
   CIRCLEQ_INSERT_BEFORE(&(thread_pool.head), thread_current, t, pointers);
+
+  #ifdef PREEMPTION
   set_alarm();
+  #endif
+
   return 0;
+
 }
     
 int thread_yield(void){  
+  #ifdef PREEMPTION
   preemption = 0;
+  #endif
 
   Thread * new = CIRCLEQ_LOOP_NEXT(&(thread_pool.head), thread_current, pointers);
   Thread * old = thread_current;
   thread_current = new;
+  #ifdef PREEMPTION
   preemption = 1;
+  #endif
   if(new != old){//do not swap on same context
     gettimeofday(&last_yield, NULL);    
+    #ifdef PREEMPTION
     ualarm(TIMEOUT, 0);        
+    #endif
     return swapcontext(&(old->uc), &(new->uc));
   }
   return 0;
 }
 
 int thread_join(thread_t thread, void **retval){
+  #ifdef PREEMPTION
   preemption = 0;
+  #endif
   //prevent a waiting thread from being yield to
   thread->thread_waiting_for_me = thread_current;
   //CIRCLEQ_REMOVE(&(thread_pool.head), thread_current, pointers);
@@ -167,13 +190,17 @@ int thread_join(thread_t thread, void **retval){
   //CIRCLEQ_INSERT_AFTER(&(thread_pool.head), thread_current, thread->thread_waiting_for_me, pointers);
   //free the joined thread
   free_thread(thread);
+  #ifdef PREEMPTION
   set_alarm();
+  #endif
   return 0;
 }
 
 
 void thread_exit(void *retval) {
+  #ifdef PREEMPTION
   preemption = 0;
+  #endif
 
   thread_current->is_done = 1;
   thread_current->retval = retval;
@@ -194,7 +221,9 @@ void thread_exit(void *retval) {
   CIRCLEQ_REMOVE(&(thread_pool.head), thread_current, pointers);  
   //equivalent of a yield but with a setcontext instead of a swapcontext
   thread_current = next;
+  #ifdef PREEMPTION
   set_alarm();
+  #endif
   setcontext(&(next->uc));
   fprintf(stderr, "thread_exit error\n");
   exit(EXIT_FAILURE);//avoid no_return related warning
