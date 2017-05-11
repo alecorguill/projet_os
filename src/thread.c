@@ -233,11 +233,14 @@ void thread_exit(void *retval) {
 
 
 int thread_mutex_init(thread_mutex_t *mutex){
+	preemption = 0;
+	
 	if(mutex == NULL)
 		return 1;
 	
 	mutex->id = mutex_id++;
 	mutex->is_locked = 0;
+	CIRCLEQ_INIT(&(mutex->threads_waiting_for_unlock.head));
 
 	return 0;
 }
@@ -254,23 +257,50 @@ int thread_mutex_destroy(thread_mutex_t *mutex){
 }
 
 int thread_mutex_lock(thread_mutex_t *mutex){
+	preemption = 0;
+	
 	if(mutex == NULL)
 		return 1;
 	
-	while(mutex->is_locked){
-		thread_yield();
+	//printf("LOCK ATTEMPT %p...", thread_current);
+	
+	if(mutex->is_locked){
+		Thread* old = thread_current;
+		Thread* new = CIRCLEQ_LOOP_NEXT(&(thread_pool.head), thread_current, pointers);
+		thread_current = new;
+
+		//printf("  WAITING %p -> %p\n", old, new);
+		
+		// Put the thread into the waiting List
+		CIRCLEQ_REMOVE(&(thread_pool.head), old, pointers);
+		CIRCLEQ_INSERT_TAIL(&(mutex->threads_waiting_for_unlock.head), old, pointers);  
+		
+		int rt = swapcontext(&(old->uc), &(new->uc));
+		if(rt != 0) return rt;
 	}
 	
+	//printf("  LOCKING %p\n", thread_current);
 	__sync_lock_test_and_set(&(mutex->is_locked), 1);
 	
 	return 0;
 }
 
 int thread_mutex_unlock(thread_mutex_t *mutex){
+	preemption = 0;
+	
 	if(mutex == NULL)
 		return 1;
-		
+	
 	mutex->is_locked = 0;
+	
+	if(!CIRCLEQ_EMPTY(&(mutex->threads_waiting_for_unlock.head))){
+		Thread* new = CIRCLEQ_FIRST(&(mutex->threads_waiting_for_unlock.head));
+		CIRCLEQ_REMOVE(&(mutex->threads_waiting_for_unlock.head), new, pointers);
+		CIRCLEQ_INSERT_AFTER(&(thread_pool.head), thread_current, new, pointers);
+		
+		//printf("  NEW %p\n", new); 
+	}
+	
 	thread_yield(); // nice gesture
 		
 	return 0;

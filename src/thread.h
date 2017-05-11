@@ -64,6 +64,7 @@ extern void thread_exit(void *retval) __attribute__ ((__noreturn__));
 typedef struct thread_mutex {
 	int id;
 	int is_locked;
+	List threads_waiting_for_unlock;
 } thread_mutex_t;
 
 int thread_mutex_init(thread_mutex_t *mutex);

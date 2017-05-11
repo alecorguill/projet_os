@@ -33,10 +33,13 @@ static void * thfunc(void *dummy __attribute__((unused)))
 	/* Verrouille la section critique accédant a counter */
 	thread_mutex_lock(&lock);
 	tmp = counter;
+	//printf("FIRST YIELD %d\n", i);
 	thread_yield();
 	tmp++;
+	//printf("SECOND YIELD %d, tmp = %d\n", i, tmp);
 	thread_yield();
 	counter = tmp;
+	//printf("UNLOCK %d", i);
 	thread_mutex_unlock(&lock);
     }
 
