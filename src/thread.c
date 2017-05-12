@@ -20,7 +20,7 @@ struct timeval last_yield;
 
 void preempter(__attribute__((__unused__)) int signo){
   if(preemption){
-    fprintf(stderr, "preemption\n");
+    //fprintf(stderr, "preemption\n");
     gettimeofday(&last_yield, NULL);
     thread_yield();
   }
@@ -57,12 +57,6 @@ void print_list(struct List * l){
   for(t = l->head.cqh_first; t != (void *)&l->head; t = t->pointers.cqe_next){
     fprintf(stderr, "element: %p\n", t);           
   }
- 
-  /* while( CIRCLEQ_LOOP_NEXT(&l->head, t, pointers) != thread_current ){ */
-  /* //while( CIRCLEQ_NEXT(t, pointers) != thread_current ){ */
-  /*   fprintf(stderr, "element: %p\n", t); */
-  /*   t = CIRCLEQ_LOOP_NEXT(&l->head, t, pointers); */
-  /* }  */
 }
 
 void free_thread(Thread * t){
@@ -72,6 +66,7 @@ void free_thread(Thread * t){
   }  
   if(t != NULL){
     free(t);
+    t = NULL;
   }
 }
 
@@ -95,13 +90,17 @@ void pre_func(void){
 
   // set thread_current to first
   CIRCLEQ_INIT(&(thread_pool.head));
-  CIRCLEQ_INSERT_HEAD(&(thread_pool.head), thread_current, pointers);       
+  CIRCLEQ_INSERT_HEAD(&(thread_pool.head), thread_current, pointers);
+  #ifdef PREEMPTION
   gettimeofday(&last_yield, NULL);
+  #endif
 }
 
 __attribute__ ((__destructor__)) 
 void post_func(void){
+  #ifdef PREEMPTION
   preemption = 0;
+  #endif
   Thread * next;
   while( (next = CIRCLEQ_LOOP_NEXT(&thread_pool.head, thread_current, pointers)) != thread_current ){
     CIRCLEQ_REMOVE(&thread_pool.head, next, pointers);
@@ -150,7 +149,7 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg){
 
 }
     
-int thread_yield(void){  
+int thread_yield(void){
   #ifdef PREEMPTION
   preemption = 0;
   #endif
@@ -162,8 +161,8 @@ int thread_yield(void){
   preemption = 1;
   #endif
   if(new != old){//do not swap on same context
-    gettimeofday(&last_yield, NULL);    
     #ifdef PREEMPTION
+    gettimeofday(&last_yield, NULL);    
     ualarm(TIMEOUT, 0);        
     #endif
     return swapcontext(&(old->uc), &(new->uc));
@@ -175,19 +174,19 @@ int thread_join(thread_t thread, void **retval){
   #ifdef PREEMPTION
   preemption = 0;
   #endif
+
   //prevent a waiting thread from being yield to
   thread->thread_waiting_for_me = thread_current;
-  //CIRCLEQ_REMOVE(&(thread_pool.head), thread_current, pointers);
-  while(!thread->is_done){
-    //yield until thread is done
+  if(!thread->is_done && CIRCLEQ_LOOP_NEXT(&(thread_pool.head), thread_current, pointers) != thread_current){
+    CIRCLEQ_REMOVE(&(thread_pool.head), thread_current, pointers);
     thread_yield();
   }
+  
   if(retval != NULL){
     //if result is not ignored    
     *retval = thread->retval;
   }
-  //the current thread does not have to wait anymore, give it priority
-  //CIRCLEQ_INSERT_AFTER(&(thread_pool.head), thread_current, thread->thread_waiting_for_me, pointers);
+
   //free the joined thread
   free_thread(thread);
   #ifdef PREEMPTION
@@ -204,14 +203,13 @@ void thread_exit(void *retval) {
 
   thread_current->is_done = 1;
   thread_current->retval = retval;
-  Thread * next = CIRCLEQ_LOOP_NEXT(&thread_pool.head, thread_current, pointers);
+  Thread * next;
 
-  /* if(thread_current->thread_waiting_for_me != NULL){ */
-  /*   CIRCLEQ_INSERT_AFTER(&(thread_pool.head), thread_current, thread_current->thread_waiting_for_me, pointers); */
-  /*   next = thread_current->thread_waiting_for_me; */
-  /* }else{ */
-  /*   next = CIRCLEQ_LOOP_NEXT(&thread_pool.head, thread_current, pointers); */
-  /* } */
+  if(thread_current->thread_waiting_for_me != NULL){
+    CIRCLEQ_INSERT_AFTER(&(thread_pool.head), thread_current, thread_current->thread_waiting_for_me, pointers);
+  }
+  next = CIRCLEQ_LOOP_NEXT(&thread_pool.head, thread_current, pointers);
+
   if(thread_current == next){    
     //if 1 element in thread pool, exit program
     exit(EXIT_SUCCESS);
@@ -231,9 +229,8 @@ void thread_exit(void *retval) {
 
 
 
-
 int thread_mutex_init(thread_mutex_t *mutex){
-	preemption = 0;
+  	//preemption = 0;
 	
 	if(mutex == NULL)
 		return 1;
@@ -246,65 +243,62 @@ int thread_mutex_init(thread_mutex_t *mutex){
 }
 
 
-
-
-
-int thread_mutex_destroy(thread_mutex_t *mutex){	
-	if(mutex == NULL)
-		return 1;
+/* int thread_mutex_destroy(thread_mutex_t *mutex){ */
+/* 	if(mutex == NULL) */
+/* 		return 1; */
 		
-	return 0;
-}
+/* 	return 0; */
+/* } */
 
-int thread_mutex_lock(thread_mutex_t *mutex){
-	preemption = 0;
+/* int thread_mutex_lock(thread_mutex_t *mutex){ */
+/*   //preemption = 0; */
 	
-	if(mutex == NULL)
-		return 1;
+/* 	if(mutex == NULL) */
+/* 		return 1; */
 	
-	//printf("LOCK ATTEMPT %p...", thread_current);
+/* 	//printf("LOCK ATTEMPT %p...", thread_current); */
 	
-	if(mutex->is_locked){
-		Thread* old = thread_current;
-		Thread* new = CIRCLEQ_LOOP_NEXT(&(thread_pool.head), thread_current, pointers);
-		thread_current = new;
+/* 	if(mutex->is_locked){ */
+/* 		Thread* old = thread_current; */
+/* 		Thread* new = CIRCLEQ_LOOP_NEXT(&(thread_pool.head), thread_current, pointers); */
+/* 		thread_current = new; */
 
-		//printf("  WAITING %p -> %p\n", old, new);
+/* 		//printf("  WAITING %p -> %p\n", old, new); */
 		
-		// Put the thread into the waiting List
-		CIRCLEQ_REMOVE(&(thread_pool.head), old, pointers);
-		CIRCLEQ_INSERT_TAIL(&(mutex->threads_waiting_for_unlock.head), old, pointers);  
+/* 		// Put the thread into the waiting List */
+/* 		CIRCLEQ_REMOVE(&(thread_pool.head), old, pointers); */
+/* 		CIRCLEQ_INSERT_TAIL(&(mutex->threads_waiting_for_unlock.head), old, pointers); */
 		
-		int rt = swapcontext(&(old->uc), &(new->uc));
-		if(rt != 0) return rt;
-	}
+/* 		int rt = swapcontext(&(old->uc), &(new->uc)); */
+/* 		if(rt != 0) return rt; */
+/* 	} */
 	
-	//printf("  LOCKING %p\n", thread_current);
-	__sync_lock_test_and_set(&(mutex->is_locked), 1);
+/* 	//printf("  LOCKING %p\n", thread_current); */
+/* 	__sync_lock_test_and_set(&(mutex->is_locked), 1); */
 	
-	return 0;
-}
+/* 	return 0; */
+/* } */
 
-int thread_mutex_unlock(thread_mutex_t *mutex){
-	preemption = 0;
+/* int thread_mutex_unlock(thread_mutex_t *mutex){ */
+/* 	//preemption = 0; */
 	
-	if(mutex == NULL)
-		return 1;
+/* 	if(mutex == NULL) */
+/* 		return 1; */
 	
-	mutex->is_locked = 0;
+/* 	mutex->is_locked = 0; */
 	
-	if(!CIRCLEQ_EMPTY(&(mutex->threads_waiting_for_unlock.head))){
-		Thread* new = CIRCLEQ_FIRST(&(mutex->threads_waiting_for_unlock.head));
-		CIRCLEQ_REMOVE(&(mutex->threads_waiting_for_unlock.head), new, pointers);
-		CIRCLEQ_INSERT_AFTER(&(thread_pool.head), thread_current, new, pointers);
+/* 	if(!CIRCLEQ_EMPTY(&(mutex->threads_waiting_for_unlock.head))){ */
+/* 		Thread* new = CIRCLEQ_FIRST(&(mutex->threads_waiting_for_unlock.head)); */
+/* 		CIRCLEQ_REMOVE(&(mutex->threads_waiting_for_unlock.head), new, pointers); */
+/* 		CIRCLEQ_INSERT_AFTER(&(thread_pool.head), thread_current, new, pointers); */
 		
-		//printf("  NEW %p\n", new); 
-	}
+/* 		//printf("  NEW %p\n", new); */
+/* 	} */
 	
-	thread_yield(); // nice gesture
+/* 	thread_yield(); // nice gesture */
 		
-	return 0;
-}
+/* 	return 0; */
+/* } */
 
 
 

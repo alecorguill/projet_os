@@ -184,9 +184,10 @@ int thread_join(thread_t thread, void **retval){
   #ifdef PREEMPTION
   preemption = 0;
   #endif
+
   //prevent a waiting thread from being yield to
   thread->thread_waiting_for_me = thread_current;
-  if(CIRCLEQ_LOOP_NEXT(&(thread_pool.head), thread_current, pointers) != thread_current){
+  if(!thread->is_done && CIRCLEQ_LOOP_NEXT(&(thread_pool.head), thread_current, pointers) != thread_current){
     CIRCLEQ_REMOVE(&(thread_pool.head), thread_current, pointers);
     thread_yield();
   }
@@ -194,12 +195,8 @@ int thread_join(thread_t thread, void **retval){
   if(retval != NULL){
     //if result is not ignored    
     *retval = thread->retval;
-    if(*retval != NULL){
-      fprintf(stderr, "%p: %d\n", thread_self(), *((int*)thread->retval));
-    }else{
-      fprintf(stderr, "%p: NULL\n", thread_self());
-    }
   }
+
   //free the joined thread
   free_thread(thread);
   #ifdef PREEMPTION
@@ -216,7 +213,6 @@ void thread_exit(void *retval) {
 
   thread_current->is_done = 1;
   thread_current->retval = retval;
-  //fprintf(stderr, "exit : %p , retval : %d", thread_current, *(int*)retval);
   Thread * next;
 
   if(thread_current->thread_waiting_for_me != NULL){
@@ -237,7 +233,7 @@ void thread_exit(void *retval) {
   set_alarm();
   #endif
   setcontext(&(next->uc));
-  //fprintf(stderr, "thread_exit error\n");
+  fprintf(stderr, "thread_exit error\n");
   exit(EXIT_FAILURE);//avoid no_return related warning
 }
 
