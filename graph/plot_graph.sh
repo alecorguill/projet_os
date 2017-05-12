@@ -9,7 +9,6 @@ if [ $# -eq 1 ]
 then
 ./graph_$1.sh
 else
-#cp *_pthread graph
 for i in $FILES
 do
 ./$i
