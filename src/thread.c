@@ -7,7 +7,6 @@
 #include "thread.h"
 
 #define TIMEOUT 4000//4ms before preemption
-#define PREEMPTION
 
 static int mutex_id = 0;
 static struct List thread_pool;

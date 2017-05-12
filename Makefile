@@ -1,4 +1,5 @@
-CFLAGS = -Wall -Wextra -lpthread -Isrc -g -O0
+FLAGS=
+CFLAGS = -Wall -Wextra $(FLAGS) -lpthread -Isrc -g -O0
 
 BIN = test/01-main.c \
 	test/12-join-main.c \
@@ -13,28 +14,12 @@ BIN = test/01-main.c \
 	test/52-big-sum.c \
 	test/62-preemption.c \
 
-NB_THREAD_1 = 2
-NB_THREAD_2 = 10
-NB_THREAD_3 = 100
-NB_THREAD_4 = 1000
-NB_THREAD_5 = 5000
+NB_THREAD = 2
+NB_YIELD = 4
+NB_FIBO = 4
+NB_BIGSUM = 100
+NB_SORT = 100
 
-NB_YIELD_1 = 4
-NB_YIELD_2 = 20
-NB_YIELD_3 = 100
-NB_YIELD_4 = 500
-
-NB_FIBO_1 = 4
-NB_FIBO_2 = 8
-NB_FIBO_3 = 12
-
-NB_BIGSUM_1 = 100
-NB_BIGSUM_2 = 500
-NB_BIGSUM_3 = 1000
-
-NB_SORT_1 = 100
-NB_SORT_2 = 500
-NB_SORT_3 = 1000
 
 all: tests
 
@@ -100,53 +85,23 @@ ptest11: test11
 ptest12: test12 
 	./test.sh 12
 ptest21: test21 
-	./test.sh 21 $(NB_THREAD_1)
-	./test.sh 21 $(NB_THREAD_2)
-	./test.sh 21 $(NB_THREAD_3)
-	./test.sh 21 $(NB_THREAD_4)
-	./test.sh 21 $(NB_THREAD_5)
+	./test.sh 21 $(NB_THREAD)
 ptest22: test22 
-	./test.sh 22 $(NB_THREAD_1)
-	./test.sh 22 $(NB_THREAD_2)
-	./test.sh 22 $(NB_THREAD_3)
-# 	./test.sh 22 $(NB_THREAD_4)
-#	./test.sh 22 $(NB_THREAD_5) 
+	./test.sh 22 $(NB_THREAD)
 ptest23: test23 
-	./test.sh 23 $(NB_THREAD_1)
-	./test.sh 23 $(NB_THREAD_2)
-	./test.sh 23 $(NB_THREAD_3)
-	./test.sh 23 $(NB_THREAD_4)
-	./test.sh 23 $(NB_THREAD_5) 
+	./test.sh 23 $(NB_THREAD) 
 ptest31: test31
-	./test.sh 31 $(NB_THREAD_1) $(NB_YIELD_1)
-	./test.sh 31 $(NB_THREAD_2) $(NB_YIELD_4)
-	./test.sh 31 $(NB_THREAD_3) $(NB_YIELD_3)
-	./test.sh 31 $(NB_THREAD_4) $(NB_YIELD_2)
-# 	./test.sh 31 $(NB_THREAD_5) $(NB_YIELD_4)
+	./test.sh 31 $(NB_THREAD) $(NB_YIELD)
 ptest32: test32 
-	./test.sh 32 $(NB_THREAD_1) $(NB_YIELD_4)
-	./test.sh 32 $(NB_THREAD_2) $(NB_YIELD_2)
-	./test.sh 32 $(NB_THREAD_3) $(NB_YIELD_1)
-# 	./test.sh 32 $(NB_THREAD_4) $(NB_YIELD_2)
-# 	./test.sh 32 $(NB_THREAD_5) $(NB_YIELD_3)
+	./test.sh 32 $(NB_THREAD) $(NB_YIELD)
 ptest51: test51 
-	./test.sh 51 $(NB_FIBO_1)
-	./test.sh 51 $(NB_FIBO_2)
-	./test.sh 51 $(NB_FIBO_3)
+	./test.sh 51 $(NB_FIBO)
 ptest52: test52
-	./test.sh 52 $(NB_BIGSUM_1)
-	./test.sh 52 $(NB_BIGSUM_2)
-#	./test.sh 52 $(NB_BIGSUM_3)
+	./test.sh 52 $(NB_BIGSUM)
 ptest53: test53
-	./test.sh 53 $(NB_SORT_1)
-	./test.sh 53 $(NB_SORT_2)
-#	./test.sh 53 $(NB_SORT_3)
+	./test.sh 53 $(NB_SORT)
 ptest61: test61 
-	./test.sh 61 $(NB_THREAD_1)
-	./test.sh 61 $(NB_THREAD_2)
-	./test.sh 61 $(NB_THREAD_3)
-#	./test.sh 61 $(NB_THREAD_4)
-#	./test.sh 61 $(NB_THREAD_5)
+	./test.sh 61 $(NB_THREAD)
 
 ptest62: test62 
 	./test.sh 62
