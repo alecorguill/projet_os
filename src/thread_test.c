@@ -7,6 +7,7 @@
 #include "thread.h"
 
 #define TIMEOUT 4000//4ms before preemption
+#define PREEMPTION
 
 static int mutex_id = 0;
 static struct List thread_pool;
@@ -56,6 +57,12 @@ void print_list(struct List * l){
   for(t = l->head.cqh_first; t != (void *)&l->head; t = t->pointers.cqe_next){
     fprintf(stderr, "element: %p\n", t);           
   }
+ 
+  /* while( CIRCLEQ_LOOP_NEXT(&l->head, t, pointers) != thread_current ){ */
+  /* //while( CIRCLEQ_NEXT(t, pointers) != thread_current ){ */
+  /*   fprintf(stderr, "element: %p\n", t); */
+  /*   t = CIRCLEQ_LOOP_NEXT(&l->head, t, pointers); */
+  /* }  */
 }
 
 void free_thread(Thread * t){
@@ -143,12 +150,14 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg){
   #ifdef PREEMPTION
   set_alarm();
   #endif
+  //print_list(&thread_pool);
 
   return 0;
 
 }
     
 int thread_yield(void){
+  //fprintf(stderr,"yield\n");
   #ifdef PREEMPTION
   preemption = 0;
   #endif
@@ -156,6 +165,8 @@ int thread_yield(void){
   Thread * new = CIRCLEQ_LOOP_NEXT(&(thread_pool.head), thread_current, pointers);
   Thread * old = thread_current;
   thread_current = new;
+  //print_list(&thread_pool);
+  //fprintf(stderr,"next : %p \n", new);
   #ifdef PREEMPTION
   preemption = 1;
   #endif
@@ -228,6 +239,7 @@ void thread_exit(void *retval) {
 
 
 
+
 int thread_mutex_init(thread_mutex_t *mutex){
   	//preemption = 0;
 	
@@ -240,6 +252,9 @@ int thread_mutex_init(thread_mutex_t *mutex){
 
 	return 0;
 }
+
+
+
 
 
 /* int thread_mutex_destroy(thread_mutex_t *mutex){ */

@@ -24,7 +24,7 @@ NB_SORT = 100
 all: tests
 
 # TEST D'EXECUTION #
-tests: test01 test02 test11 test12 test21 test22 test23 test31 test32 test51 test52 test53 test61
+tests: test01 test02 test11 test12 test21 test22 test23 test31 test32 test51 test52 test53
 
 test01: thread 
 	gcc $(CFLAGS) build/thread.o test/01-main.c -o 01
@@ -74,7 +74,7 @@ thread:
 
 # TEST COMPARAISON P_THREAD #
 
-check: tests ptest01 ptest02 ptest11 ptest12 ptest21 ptest22 ptest23 ptest31 ptest32 ptest51 ptest52 ptest53 ptest61
+check: tests ptest01 ptest02 ptest11 ptest12 ptest21 ptest22 ptest23 ptest31 ptest32 ptest51 ptest52 ptest53
 
 ptest01: test01 
 	./test.sh 01

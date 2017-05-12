@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
   bigtab.len = n;
   unsigned long i;
   for(i=0; i<n; i++){
-	  bigtab.tab[i] = i;
+	  bigtab.tab[i] = i+1;
   }
   
   res = (unsigned long) bigsum((void *)(&bigtab));
