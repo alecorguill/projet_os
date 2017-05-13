@@ -6,9 +6,13 @@ Pour compiler les tests :
      make tests
 
 Pour compiler un test en particulier :
-     make testNumero
+     make test{01,02,etc..}
 Par exemple pour compiler le test 01
     make test01
+
+Pour compiler avec la preemption :
+make tests FLAGS=-PREEMPTION
+
 
 ###### EXECUTION TEST #####
 Pour éxecuter le test de numero n :
@@ -28,4 +32,11 @@ NB_BIGSUM
 NB_SORT
 
 Pour lancer un test de comparaison avec pthread pour un test particulier :
-     make ptestNumero
+     make ptest{01,02,etc..}
+
+##### COURBE COMPARAISON PTHREAD######
+Pour afficher les courbes de comparaison avec pthread :
+Ce rendre dans le répertoire graph
+./plot_graph.sh [{01,02,etc..}]
+La commande sans argument lance toutes les courbes.
+
