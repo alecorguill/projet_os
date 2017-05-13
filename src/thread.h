@@ -19,12 +19,13 @@ struct List;
 typedef struct Thread * thread_t;
 
 typedef struct Thread{
-  ucontext_t uc;
-  struct Thread *thread_waiting_for_me;
+  ucontext_t uc; //execution context of the thread (stack)
+  struct Thread *thread_waiting_for_me; //points toward the thread who has joined this thread (or NULL)
   char is_done; //1 if thread has ended, else 0
   void *retval; //retval of the thread when ended (not the retval of the waited thread)
-  int valgrind_stackid;
-  CIRCLEQ_ENTRY(Thread) pointers;
+  int valgrind_stackid; //avoid valgrind stack errors due to malloc'd stacks
+  unsigned long timeslice; //time given to a thread to run without being preempted
+  CIRCLEQ_ENTRY(Thread) pointers; //pointers toward over Thread elements of the thread queue
 } Thread;
 
 typedef struct List{
@@ -62,9 +63,9 @@ extern void thread_exit(void *retval) __attribute__ ((__noreturn__));
 
 /* Interface possible pour les mutex */
 typedef struct thread_mutex {
-	int id;
-	int is_locked;
-	List threads_waiting_for_unlock;
+  int id;
+  int is_locked;
+  List threads_waiting_for_unlock;
 } thread_mutex_t;
 
 int thread_mutex_init(thread_mutex_t *mutex);
