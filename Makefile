@@ -1,5 +1,5 @@
-FLAGS=
-CFLAGS = -Wall -Wextra $(FLAGS)-lpthread -Isrc -g -O0
+FLAGS =
+CFLAGS = -Wall -Wextra $(FLAGS) -lpthread -Isrc -g -O0
 
 BIN = test/01-main.c \
 	test/12-join-main.c \
@@ -19,12 +19,12 @@ NB_YIELD = 4
 NB_FIBO = 4
 NB_BIGSUM = 100
 NB_SORT = 100
-
+NB_SUM = 1000
 
 all: tests
 
 # TEST D'EXECUTION #
-tests: test01 test02 test11 test12 test21 test22 test23 test31 test32 test51 test52 test53 test62
+tests: test01 test02 test11 test12 test21 test22 test23 test31 test32 test51 test52 test53 test62 test63 test64
 
 test01: thread test/01-main.c src/thread.c
 	@gcc $(CFLAGS) build/thread.o test/01-main.c -o 01
@@ -68,8 +68,11 @@ test61: thread test/61*.c src/thread.c
 test62: thread test/62*.c src/thread.c
 	@gcc $(CFLAGS) -DPREEMPTION src/thread.c test/62*.c -o 62
 
-test63: thread test/62*.c src/thread.c
+test63: thread test/63*.c src/thread.c
 	@gcc $(CFLAGS) -DPREEMPTION src/thread.c test/63*.c -o 63
+
+test64: thread test/64*.c src/thread.c
+	@gcc $(CFLAGS) build/thread.o test/64*.c -o 64
 
 thread: src/thread.c 
 	@gcc $(CFLAGS) -c src/thread.c
@@ -77,7 +80,7 @@ thread: src/thread.c
 
 # TEST COMPARAISON P_THREAD #
 
-check: tests ptest01 ptest02 ptest11 ptest12 ptest21 ptest22 ptest23 ptest31 ptest32 ptest51 ptest52 ptest53 ptest61 ptest62 ptest63
+check: tests ptest01 ptest02 ptest11 ptest12 ptest21 ptest22 ptest23 ptest31 ptest32 ptest51 ptest52 ptest53 ptest61 ptest62 ptest63 ptest64
 
 ptest01: test01 src/thread.c
 	@./test.sh 01
@@ -109,9 +112,10 @@ ptest62: test62 src/thread.c
 	@./62 
 ptest63: test63 src/thread.c
 	@./63 
-
+ptest64: test64 src/thread.c
+	@./test.sh 64 $(NB_SUM)
 clean:
-	@rm -rf build/* src/*~ src/#* test/*~ test/#* ./01* ./02* ./11* ./12* ./21* ./22* ./23* ./31* ./32* ./51* ./52* ./53* ./61* ./62*
+	@rm -rf build/* src/*~ src/#* test/*~ test/#* ./01* ./02* ./11* ./12* ./21* ./22* ./23* ./31* ./32* ./51* ./52* ./53* ./61* ./62* ./63* ./64*
 
 .PHONY: all clean 
 
