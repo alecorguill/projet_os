@@ -9,7 +9,6 @@
 
 #define DFT_TIMESLICE 4000 //4ms before preemption
 
-#define PREEMPTION
 
 static struct List thread_pool;
 static Thread * thread_current = NULL;
@@ -31,7 +30,6 @@ unsigned long time_since_last_yield(void){
 
 void preempter(__attribute__((__unused__)) int signo){
   if(preemption){
-    //fprintf(stderr, "since last yield: %lu\n", time_since_last_yield());
     //reinitialize timeslice after preemption
     thread_current->timeslice = DFT_TIMESLICE;
     implicit_yield();
@@ -160,13 +158,11 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg){
 
 int implicit_yield(void){
     #ifdef PREEMPTION
-  //fprintf(stderr, "implicit_yield: time since last yield %lu\n", time_since_last_yield());
   preemption = 0;
     #endif
   
   Thread * new = CIRCLEQ_LOOP_NEXT(&(thread_pool.head), thread_current, pointers);
   Thread * old = thread_current;
-  //fprintf(stderr, "yield : %p --> %p\n", old, new);
   thread_current = new;
 
   if(new != old){//do not swap on same context
@@ -190,7 +186,6 @@ int thread_yield(void){
     #ifdef PREEMPTION
   //when an explicit yield is made before the end of the time slice,
   //give it a bigger time slice for the next time
-  //fprintf(stderr, "explicit_yield: time since last yield %lu\n", time_since_last_yield());
   preemption = 0;
   unsigned long remaining_time = thread_current->timeslice - time_since_last_yield();
   thread_current->timeslice = DFT_TIMESLICE + remaining_time;

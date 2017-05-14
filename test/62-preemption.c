@@ -9,12 +9,17 @@
 
 #define TIMESLICE 4000
 #define DELAY 100 //approximative max execution time of the thread functions
-#define LOOP 100000000
+#define LOOP 100000
 
+struct timeval t1, t2;
 int preempted;
 
-void click_clock(__attribute__((__unused__)) int signo){
-  preempted = 1;
+void cpu_burn(){
+  double useless;
+  int i;
+  for(i = 0; i < 1000; i++){
+    useless += i;
+  }
 }
 
 unsigned long duration(struct timeval * t1, struct timeval * t2){
@@ -23,12 +28,13 @@ unsigned long duration(struct timeval * t1, struct timeval * t2){
 
 static void * too_long(__attribute__((__unused__)) void *_value)
 {
-  struct timeval t1, t2;
   unsigned long i, diff;
-  ualarm(TIMESLICE + DELAY, 0); 
+  //ualarm(4 * TIMESLICE + DELAY, 0); 
   gettimeofday(&t1, NULL);
-  //loop too long to be handled on a single timeslice
+  //loop too long to be handled within a couple timeslice
   for(i = 0; i < LOOP; i++){
+    //make sure loop is long with cpu waisting computation
+    cpu_burn();
     //check if preempted
     if(preempted){
       preempted = 0; //init for other threads
@@ -37,14 +43,12 @@ static void * too_long(__attribute__((__unused__)) void *_value)
   }
   gettimeofday(&t2, NULL);
   diff = duration(&t1, &t2);
-  //fprintf(stderr, "%lu\n", diff);
-  if(diff < TIMESLICE + 2 * DELAY){
-    //if thread has not been preempted, it ends before 2 timeslices
-    fprintf(stderr, "\033[31mKO\033[0m\n");
+  if(diff > 2 * (TIMESLICE + DELAY)){
+    //if thread has not been preempted, it ends after 2 timeslices
+    fprintf(stderr, "test_62 \033[31mKO\033[0m\n");
   }else{
-    fprintf(stderr, "\033[32mOK\033[0m\n");
+    fprintf(stderr, "test_62 \033[32mOK\033[0m\n");
   }
-  fprintf(stderr, "too_long ended\n");
   return NULL;
 }
 
@@ -52,15 +56,14 @@ static void * nothing_special(__attribute__((__unused__)) void *_value)
 {
   int i;
   for(i = 0; i < LOOP; i++){
+    cpu_burn();
     preempted = 1;
   }
-  fprintf(stderr, "nothing_special ended\n");
   return NULL;
 }
 
 int main()
 {
-  signal(SIGALRM, click_clock);
   preempted = 0; 
   srand(time(NULL));
   thread_t t1, t2;
@@ -69,7 +72,6 @@ int main()
   //so t1 should run a bit more than 2 timeslices
   thread_create(&t1, too_long, NULL);
   thread_create(&t2, nothing_special, NULL);
-  fprintf(stderr, "too_long: %p\nnothing_special: %p\n", t1, t2);
 	  
   thread_join(t1, NULL);
   thread_join(t2, NULL);
