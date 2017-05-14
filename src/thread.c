@@ -1,20 +1,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/queue.h>
-//#include <valgrind/valgrind.h>
+#include <valgrind/valgrind.h>
 #include <unistd.h>
 #include <sys/time.h>
 #include "thread.h"
 
 
 #define DFT_TIMESLICE 4000 //4ms before preemption
-#define MIN_SLICE 500 //min
 
 #define PREEMPTION
 
-static int mutex_id = 0;
 static struct List thread_pool;
 static Thread * thread_current = NULL;
+static int mutex_id = 0;
 
 #ifdef PREEMPTION
 char preemption;
@@ -32,20 +31,21 @@ unsigned long time_since_last_yield(void){
 
 void preempter(__attribute__((__unused__)) int signo){
   if(preemption){
-    //fprintf(stderr, "preemption\n");
+    //fprintf(stderr, "since last yield: %lu\n", time_since_last_yield());
+    //reinitialize timeslice after preemption
+    thread_current->timeslice = DFT_TIMESLICE;
     implicit_yield();
   }
 }
 
 void set_alarm(){
   unsigned long diff = time_since_last_yield();
-  //fprintf(stderr, "prochaine alarme dans %lu micro secondes\n", DFT_TIMESLICE - diff);
+  preemption = 1;
   if(diff >= thread_current->timeslice){
-    //DFT_TIMESLICE over
-    //(no need to reactivate preemption for the yield)
+    // DFT_TIMESLICE over
+    // (no need to reactivate preemption for the yield)
     preempter(0);
   }else{
-    preemption = 1;
     ualarm(thread_current->timeslice - diff, 0);
   }
 }
@@ -65,7 +65,7 @@ void print_list(struct List * l){
 
 void free_thread(Thread * t){
   if(t->valgrind_stackid != MAIN_STACK){//do not free the main stack
-    //VALGRIND_STACK_DEREGISTER(t->valgrind_stackid);
+    VALGRIND_STACK_DEREGISTER(t->valgrind_stackid);
     free(t->uc.uc_stack.ss_sp);
   }
   if(t != NULL){
@@ -100,6 +100,7 @@ void pre_func(void){
     #ifdef PREEMPTION
   thread_current->timeslice = DFT_TIMESLICE;
   gettimeofday(&last_yield, NULL);
+  set_alarm();
     #endif
 }
 
@@ -129,13 +130,13 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg){
     #ifdef PREEMPTION
   preemption = 0;
     #endif
-
+  
   Thread * t = malloc(sizeof(Thread));
   // Create context
   getcontext(&t->uc);//avoid valgrind errors
   t->uc.uc_stack.ss_size = 64*1024;
   t->uc.uc_stack.ss_sp = malloc(t->uc.uc_stack.ss_size);
-  int valgrind_stackid = 1;//VALGRIND_STACK_REGISTER(t->uc.uc_stack.ss_sp, t->uc.uc_stack.ss_sp + t->uc.uc_stack.ss_size);
+  int valgrind_stackid = VALGRIND_STACK_REGISTER(t->uc.uc_stack.ss_sp, t->uc.uc_stack.ss_sp + t->uc.uc_stack.ss_size);
   makecontext(&t->uc, (void (*)(void)) exec_and_save, 2, func, funcarg);
 
   // Create thread corresponding to context
@@ -159,41 +160,40 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg){
 
 int implicit_yield(void){
     #ifdef PREEMPTION
+  //fprintf(stderr, "implicit_yield: time since last yield %lu\n", time_since_last_yield());
   preemption = 0;
     #endif
-
+  
   Thread * new = CIRCLEQ_LOOP_NEXT(&(thread_pool.head), thread_current, pointers);
   Thread * old = thread_current;
+  //fprintf(stderr, "yield : %p --> %p\n", old, new);
   thread_current = new;
-    #ifdef PREEMPTION
-  preemption = 1;
-    #endif
+
   if(new != old){//do not swap on same context
         #ifdef PREEMPTION
     gettimeofday(&last_yield, NULL);
+    preemption = 1;
     ualarm(new->timeslice, 0);
         #endif
     return swapcontext(&(old->uc), &(new->uc));
   }
+    #ifdef PREEMPTION
+  else{
+    preemption = 1;
+  }
+    #endif
+
   return 0;
 }
 
 int thread_yield(void){
     #ifdef PREEMPTION
   //when an explicit yield is made before the end of the time slice,
-  //give it more time before preemption for the next time
+  //give it a bigger time slice for the next time
+  //fprintf(stderr, "explicit_yield: time since last yield %lu\n", time_since_last_yield());
+  preemption = 0;
   unsigned long remaining_time = thread_current->timeslice - time_since_last_yield();
   thread_current->timeslice = DFT_TIMESLICE + remaining_time;
-  /* if(remaining_time > MIN_TIMESLICE){ */
-  /*   //if the thread yields early, give it more time for the next swapcontext */
-  /*   thread_current->timeslice = DFT_TIME_SLICE + remaining_time; */
-  /* } else { */
-  /*   if(remaining_time < 0) { */
-
-  /*   //if the remaining time is too small, a swapcontext is not worth */
-  /*   //so we give back a normal time slice */
-  /*   thread_current->timeslice = DFT_TIME_SLICE; */
-  /* } */
     #endif
   return implicit_yield();
 }
@@ -249,7 +249,9 @@ void thread_exit(void *retval) {
   //equivalent of a yield but with a setcontext instead of a swapcontext
   thread_current = next;
     #ifdef PREEMPTION
-  set_alarm();
+  preemption = 1;
+  gettimeofday(&last_yield, NULL);
+  ualarm(next->timeslice, 0);  
     #endif
   setcontext(&(next->uc));
   fprintf(stderr, "thread_exit error\n");
