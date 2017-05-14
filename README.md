@@ -11,7 +11,7 @@ Par exemple pour compiler le test 01
     make test01
 
 Pour compiler avec la preemption :
-make tests FLAGS=-PREEMPTION
+make tests FLAGS=-DPREEMPTION
 
 
 ###### EXECUTION TEST #####
