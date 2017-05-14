@@ -68,13 +68,16 @@ test61: thread test/61*.c src/thread.c
 test62: thread test/62*.c src/thread.c
 	@gcc $(CFLAGS) -DPREEMPTION src/thread.c test/62*.c -o 62
 
+test63: thread test/62*.c src/thread.c
+	@gcc $(CFLAGS) -DPREEMPTION src/thread.c test/63*.c -o 63
+
 thread: src/thread.c 
 	@gcc $(CFLAGS) -c src/thread.c
 	@mv thread.o build/
 
 # TEST COMPARAISON P_THREAD #
 
-check: tests ptest01 ptest02 ptest11 ptest12 ptest21 ptest22 ptest23 ptest31 ptest32 ptest51 ptest52 ptest53 ptest62
+check: tests ptest01 ptest02 ptest11 ptest12 ptest21 ptest22 ptest23 ptest31 ptest32 ptest51 ptest52 ptest53 ptest61 ptest62 ptest63
 
 ptest01: test01 src/thread.c
 	@./test.sh 01
@@ -104,6 +107,8 @@ ptest61: test61 src/thread.c
 	@./test.sh 61 $(NB_THREAD)
 ptest62: test62 src/thread.c
 	@./62 
+ptest63: test63 src/thread.c
+	@./63 
 
 clean:
 	@rm -rf build/* src/*~ src/#* test/*~ test/#* ./01* ./02* ./11* ./12* ./21* ./22* ./23* ./31* ./32* ./51* ./52* ./53* ./61* ./62*

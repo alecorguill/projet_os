@@ -28,24 +28,47 @@ unsigned long duration(struct timeval * t1, struct timeval * t2){
 
 static void * too_long(__attribute__((__unused__)) void *_value)
 {
-  unsigned long i, diff;
-  gettimeofday(&t1, NULL);
-  //loop too long to be handled within a couple timeslice
-  for(i = 0; i < LOOP; i++){
-    //make sure loop is long with cpu waisting computation
-    cpu_burn();
-    //check if preempted
-    if(preempted){
-      break;
+  char ok = 1;
+  unsigned long i, diff, mean;
+  //wait for 2 preemption to check timeslice change
+  int j;
+  for(j = 0; j < 2; j++){
+    gettimeofday(&t1, NULL);
+    //loop too long to be handled within a couple timeslice
+    for(i = 0; i < LOOP; i++){
+      //yield at TIMESLICE / 2 for the first j loop
+      gettimeofday(&t2, NULL);
+      if(j == 0 && (duration(&t1, &t2) > TIMESLICE / 2)){
+	thread_yield();
+      }
+      //make sure loop is long with cpu wasting computation
+      cpu_burn();
+      //check if preempted twice
+      if(preempted){
+	preempted = 0;
+	break;
+      }
+    }
+    gettimeofday(&t2, NULL);
+    diff = duration(&t1, &t2);    
+    if(j == 0){
+      //for first preemption, time must be < 2 * (TIMESLICE + DELAY)
+      ok = ok && diff < 2 * (TIMESLICE + DELAY);
+      mean = diff;
+    }else{
+      //for second preemption, time must > 2 * (TIMESLICE + DELAY)
+      ok = ok && diff > 2 * (TIMESLICE + DELAY);
+      mean += diff;
+      mean /= 2;
+      //mean of a timeslice must be TIMESLICE +/- DELAY
+      ok = ok && mean > 2 * (TIMESLICE - DELAY) && mean < 2 * (TIMESLICE + DELAY);
     }
   }
-  gettimeofday(&t2, NULL);
-  diff = duration(&t1, &t2);
-  if(diff > 2 * (TIMESLICE + DELAY)){
-    //if thread has not been preempted, it ends after 2 timeslices
-    fprintf(stderr, "test_62 \033[31mKO\033[0m\n");
+
+  if(!ok){
+    fprintf(stderr, "test_63 \033[31mKO\033[0m\n");
   }else{
-    fprintf(stderr, "test_62 \033[32mOK\033[0m\n");
+    fprintf(stderr, "test_63 \033[32mOK\033[0m\n");
   }
   return NULL;
 }
