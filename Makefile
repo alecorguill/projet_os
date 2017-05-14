@@ -71,7 +71,7 @@ test62: thread test/62*.c src/thread.c
 test63: thread test/62*.c src/thread.c
 	@gcc $(CFLAGS) -DPREEMPTION src/thread.c test/63*.c -o 63
 
-thread: src/thread.c 
+thread: src/thread.c
 	@gcc $(CFLAGS) -c src/thread.c
 	@mv thread.o build/
 
@@ -111,7 +111,7 @@ ptest63: test63 src/thread.c
 	@./63 
 
 clean:
-	@rm -rf build/* src/*~ src/#* test/*~ test/#* ./01* ./02* ./11* ./12* ./21* ./22* ./23* ./31* ./32* ./51* ./52* ./53* ./61* ./62* ./63*
+	@rm -rf build/* correct/* src/*~ src/#* test/*~ test/#* ./01* ./02* ./11* ./12* ./21* ./22* ./23* ./31* ./32* ./51* ./52* ./53* ./61* ./62* ./63*
 
 .PHONY: all clean 
 
