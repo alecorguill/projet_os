@@ -30,7 +30,6 @@ unsigned long time_since_last_yield(void){
 
 void preempter(__attribute__((__unused__)) int signo){
   if(preemption){
-    printf("Preemption\n");
     //reinitialize timeslice after preemption
     thread_current->timeslice = DFT_TIMESLICE;
     implicit_yield();
